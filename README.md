@@ -2,7 +2,9 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### Development Server
+
+Run the development server:
 
 ```bash
 npm run dev
@@ -16,9 +18,42 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- CSV file parsing and validation
+- Product quality issue detection (vendor information, phone numbers)
+- Image downloading from product URLs in CSV files
+- Manual review interface for flagged issues
+
+## Project Structure
+
+- `/app` - Next.js 14 App Router pages and layouts
+- `/components` - Reusable UI components
+- `/lib` - Utility functions and validation logic
+- `/public` - Static assets
+- `/app/api` - Server API routes for processing CSV files and images
+
+## Vercel Deployment
+
+This project is optimized for deployment on Vercel. Due to Vercel's serverless environment:
+
+1. Image processing is handled directly in the API routes using JavaScript
+2. Images are temporarily stored in the `/tmp` directory
+3. For production use, you should integrate with a storage solution:
+   - [Vercel Blob Storage](https://vercel.com/docs/storage/vercel-blob)
+   - [Supabase Storage](https://supabase.com/docs/guides/storage)
+   - Amazon S3
+   - Cloudflare R2
+
+### Storage Integration
+
+To integrate with a cloud storage provider:
+
+1. Install the necessary SDK (e.g., `@vercel/blob` for Vercel Blob)
+2. Update the API route to upload images to the storage service
+3. Return public URLs to the client
+
+Example integration can be found in the [Vercel Blob Documentation](https://vercel.com/docs/storage/vercel-blob/quickstart).
 
 ## Learn More
 

@@ -10,7 +10,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Info, Upload, FileCheck, Settings, AlertCircle, FileText, MessageSquare, Phone, Image as ImageIcon } from "lucide-react";
 import { CsvUploader } from "@/components/CsvUploader";
 import { QualityIssueCard } from "@/components/QualityIssueCard";
+import { QualityIssueList } from "@/components/QualityIssueList";
+import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { DetectionSettingsForm } from "@/components/DetectionSettingsForm";
+import { ImageDownloader } from "@/components/ImageDownloader";
 import { toast } from "sonner";
 import { ProductData, QualityIssue, validateProducts, parseCSV } from "@/lib/utils/validation";
 
@@ -21,6 +24,21 @@ interface DetectionSettings {
   watermarkThreshold: number;
   enableImageScanning: boolean;
   customRegexPatterns: string;
+}
+
+// Add ImageSummary interface after DetectionSettings
+interface ImageData {
+  id: number;
+  sku: string;
+  original_url: string;
+  filename: string;
+  path: string;
+  row: number;
+}
+
+interface ImageSummary {
+  total_images: number;
+  images: ImageData[];
 }
 
 // Default detection settings
@@ -40,11 +58,16 @@ export default function Home() {
   const [settings, setSettings] = useState<DetectionSettings>(defaultSettings);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoadingSample, setIsLoadingSample] = useState(false);
+  const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
+  const [downloadedImagePaths, setDownloadedImagePaths] = useState<string[]>([]);
+  const [imageSummary, setImageSummary] = useState<ImageSummary | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("card");
 
   const handleFileUploaded = (file: File, data: ProductData[]) => {
     // Store the parsed products
     setProducts(data);
     setFileUploaded(true);
+    setSelectedCsvFile(file);
     toast.success(`CSV file processed: ${data.length} products loaded`);
     
     // Run validation with current settings
@@ -93,6 +116,11 @@ export default function Home() {
           customRegexPatterns: settings.customRegexPatterns
         });
         
+        // If we have downloaded images, add a note about watermark checking
+        if (downloadedImagePaths.length > 0 && imageSummary && imageSummary.total_images > 0) {
+          toast.info(`Don't forget to check the ${imageSummary.total_images} downloaded images for watermarks`);
+        }
+        
         setIssues(detectedIssues);
         
         if (detectedIssues.length > 0) {
@@ -137,9 +165,19 @@ export default function Home() {
     }
   };
 
-  // Helper functions to count issues by type
-  const countIssuesByType = (type: "vendor_info" | "phone_number" | "watermark") => {
-    return issues.filter(issue => issue.issueType === type).length;
+  const handleImagesDownloaded = (imagePaths: string[], summary: ImageSummary | null) => {
+    setDownloadedImagePaths(imagePaths);
+    setImageSummary(summary);
+    
+    // If we have images downloaded and issues detected, we can now scan for watermarks
+    if (imagePaths.length > 0 && issues.length > 0) {
+      toast.info("You can now review product images for watermarks");
+    }
+    
+    // If we have image summary with actual images, show a message about it
+    if (summary && summary.total_images > 0) {
+      toast.success(`Downloaded ${summary.total_images} images for review`);
+    }
   };
 
   return (
@@ -181,6 +219,15 @@ export default function Home() {
                 <ScrollArea className="h-full">
                   <div className="space-y-6 pr-4">
                     <CsvUploader onFileUploaded={handleFileUploaded} />
+                    
+                    {fileUploaded && (
+                      <div className="mt-6">
+                        <ImageDownloader 
+                          csvFile={selectedCsvFile} 
+                          onImagesDownloaded={handleImagesDownloaded}
+                        />
+                      </div>
+                    )}
                     
                     <div className="flex items-center justify-center">
                       <div className="border-t w-full my-6"></div>
@@ -255,16 +302,21 @@ export default function Home() {
                     Review and address quality issues detected in your product listings
                   </CardDescription>
                 </div>
-                {issues.length > 0 && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleAnalyzeData()}
-                    disabled={isAnalyzing}
-                  >
-                    {isAnalyzing ? "Re-analyzing..." : "Re-analyze Data"}
-                  </Button>
-                )}
+                <div className="flex items-center gap-4">
+                  {issues.length > 0 && (
+                    <>
+                      <ViewToggle value={viewMode} onChange={setViewMode} />
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleAnalyzeData()}
+                        disabled={isAnalyzing}
+                      >
+                        {isAnalyzing ? "Re-analyzing..." : "Re-analyze Data"}
+                      </Button>
+                    </>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="h-[500px]">
                 {!fileUploaded ? (
@@ -301,7 +353,9 @@ export default function Home() {
                             <div>
                               <h3 className="font-semibold">Vendor Information</h3>
                               <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-bold">{countIssuesByType("vendor_info")}</span>
+                                <span className="text-2xl font-bold">
+                                  {issues.filter(issue => issue.issueType === "vendor_info").length}
+                                </span>
                                 <span className="text-muted-foreground text-sm">issues found</span>
                               </div>
                             </div>
@@ -317,7 +371,9 @@ export default function Home() {
                             <div>
                               <h3 className="font-semibold">Phone Numbers</h3>
                               <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-bold">{countIssuesByType("phone_number")}</span>
+                                <span className="text-2xl font-bold">
+                                  {issues.filter(issue => issue.issueType === "phone_number").length}
+                                </span>
                                 <span className="text-muted-foreground text-sm">issues found</span>
                               </div>
                             </div>
@@ -333,7 +389,9 @@ export default function Home() {
                             <div>
                               <h3 className="font-semibold">Watermarks</h3>
                               <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-bold">{countIssuesByType("watermark")}</span>
+                                <span className="text-2xl font-bold">
+                                  {issues.filter(issue => issue.issueType === "watermark").length}
+                                </span>
                                 <span className="text-muted-foreground text-sm">issues found</span>
                               </div>
                             </div>
@@ -341,17 +399,25 @@ export default function Home() {
                         </Card>
                       </div>
                       
-                      {/* Issue Cards */}
-                      <div className="space-y-4">
-                        {issues.map(issue => (
-                          <QualityIssueCard
-                            key={issue.id}
-                            {...issue}
-                            onMarkResolved={handleMarkResolved}
-                            onIgnore={handleIgnore}
-                          />
-                        ))}
-                      </div>
+                      {/* Issues in Card or List View */}
+                      {viewMode === "card" ? (
+                        <div className="space-y-4">
+                          {issues.map(issue => (
+                            <QualityIssueCard
+                              key={issue.id}
+                              {...issue}
+                              onMarkResolved={handleMarkResolved}
+                              onIgnore={handleIgnore}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <QualityIssueList 
+                          issues={issues}
+                          onMarkResolved={handleMarkResolved}
+                          onIgnore={handleIgnore}
+                        />
+                      )}
                     </div>
                   </ScrollArea>
                 )}

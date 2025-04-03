@@ -5,6 +5,7 @@ export interface ProductData {
   name: string;
   description: string;
   imageUrl?: string;
+  vendor?: string;
   [key: string]: string | undefined;
 }
 
@@ -14,6 +15,7 @@ export interface QualityIssue {
   productName: string;
   issueType: "vendor_info" | "phone_number" | "watermark" | "other";
   description: string;
+  details?: string;
   imageUrl?: string;
   resolved: boolean;
 }
@@ -38,7 +40,10 @@ export function parseCSV(csvString: string): ProductData[] {
   const nameField = headers.find(h => /name|title/i.test(h)) || 'name';
   const descField = headers.find(h => /desc|description/i.test(h)) || 'description';
   const imageField = headers.find(h => /image|img|photo|url/i.test(h)) || 'image';
+  const vendorField = headers.find(h => /vendor|supplier|seller|consignor/i.test(h));
 
+  console.log(`Found vendor column: ${vendorField || 'None'}`);
+  
   return lines.slice(1)
     .filter(line => line.trim() !== '')
     .map(line => {
@@ -59,6 +64,8 @@ export function parseCSV(csvString: string): ProductData[] {
             product.description = values[index];
           } else if (header === imageField) {
             product.imageUrl = values[index];
+          } else if (vendorField && header === vendorField) {
+            product.vendor = values[index];
           } else {
             product[header] = values[index];
           }
@@ -81,8 +88,7 @@ export function validateProducts(
 ): QualityIssue[] {
   const issues: QualityIssue[] = [];
   
-  // Create RegExp objects from strings
-  const vendorRegex = new RegExp(options.vendorRegex, 'i');
+  // Create RegExp objects for regex-based validations
   const phoneRegex = new RegExp(options.phoneRegex, 'i');
   
   // Parse custom regex patterns if provided
@@ -93,8 +99,8 @@ export function validateProducts(
       .forEach(pattern => {
         try {
           customPatterns.push(new RegExp(pattern.trim(), 'i'));
-        } catch (error) {
-          console.error(`Invalid regex pattern: ${pattern}`);
+        } catch (err) {
+          console.error(`Invalid regex pattern "${pattern}":`, err);
         }
       });
   }
@@ -104,17 +110,21 @@ export function validateProducts(
     // Skip products without descriptions
     if (!product.description) return;
     
-    // Check for vendor information
-    if (vendorRegex.test(product.description)) {
-      issues.push({
-        id: uuidv4(),
-        productId: product.id,
-        productName: product.name,
-        issueType: "vendor_info",
-        description: `Description contains possible vendor information matching pattern: ${options.vendorRegex}`,
-        imageUrl: product.imageUrl,
-        resolved: false
-      });
+    // Check for vendor information in description using the vendor property
+    if (product.vendor && product.vendor.trim() !== '') {
+      // If the product has a vendor name, check if it appears in the description
+      if (product.description.toLowerCase().includes(product.vendor.toLowerCase())) {
+        issues.push({
+          id: uuidv4(),
+          productId: product.id,
+          productName: product.name,
+          issueType: "vendor_info",
+          description: `Description contains vendor name "${product.vendor}"`,
+          details: product.vendor,
+          imageUrl: product.imageUrl,
+          resolved: false
+        });
+      }
     }
     
     // Check for phone numbers
@@ -126,6 +136,7 @@ export function validateProducts(
         productName: product.name,
         issueType: "phone_number",
         description: `Description contains phone number: ${matches ? matches[0] : 'Unknown format'}`,
+        details: matches ? matches[0] : undefined,
         imageUrl: product.imageUrl,
         resolved: false
       });
@@ -134,12 +145,14 @@ export function validateProducts(
     // Check custom patterns
     customPatterns.forEach((pattern, index) => {
       if (pattern.test(product.description)) {
+        const matches = product.description.match(pattern);
         issues.push({
           id: uuidv4(),
           productId: product.id,
           productName: product.name,
           issueType: "other",
           description: `Description matches custom pattern #${index + 1}`,
+          details: matches ? matches[0] : undefined,
           imageUrl: product.imageUrl,
           resolved: false
         });

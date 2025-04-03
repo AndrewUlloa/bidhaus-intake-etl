@@ -12,6 +12,7 @@ interface QualityIssueCardProps {
   productName: string;
   issueType: IssueType;
   description: string;
+  details?: string;
   imageUrl?: string;
   resolved: boolean;
   onMarkResolved: (id: string) => void;
@@ -24,6 +25,7 @@ export function QualityIssueCard({
   productName,
   issueType,
   description,
+  details,
   imageUrl,
   resolved,
   onMarkResolved,
@@ -83,6 +85,11 @@ export function QualityIssueCard({
           <div>
             <h4 className="text-sm font-semibold mb-1">Issue Description</h4>
             <p className="text-sm">{description}</p>
+            {details && (
+              <div className="mt-2 bg-muted p-2 rounded text-sm">
+                <span className="font-medium">Matched text:</span> &ldquo;{details}&rdquo;
+              </div>
+            )}
           </div>
           
           {imageUrl && (
