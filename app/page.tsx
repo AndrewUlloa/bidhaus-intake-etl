@@ -127,9 +127,9 @@ export default function Home() {
       </header>
       
       {/* Mobile header (visible only on small screens) */}
-      <header className="flex flex-col sm:hidden gap-4 mb-6">
+      <header className="flex flex-col items-center sm:hidden gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">BidHaus Quality Manager</h1>
+          <h1 className="text-2xl text-center font-bold">BidHaus Quality Manager</h1>
           <p className="text-muted-foreground">Detect and manage product listing quality issues</p>
         </div>
       </header>
@@ -188,7 +188,7 @@ export default function Home() {
                   Upload your CSV file containing product listings to check for quality issues
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[500px]">
+              <CardContent>
                 <ScrollArea className="h-full">
                   <div className="space-y-6 pr-4">
                     <CsvUploader onFileUploaded={handleFileUploaded} />
