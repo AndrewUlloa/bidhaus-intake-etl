@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Info, Upload, FileCheck, Settings, AlertCircle, MessageSquare, Phone, Image as ImageIcon } from "lucide-react";
+import { Info, Upload, FileCheck, Settings, AlertCircle, MessageSquare, Phone, Image as ImageIcon, RefreshCw } from "lucide-react";
 import { CsvUploader } from "@/components/CsvUploader";
 import { QualityIssueCard } from "@/components/QualityIssueCard";
 import { QualityIssueList } from "@/components/QualityIssueList";
@@ -16,6 +16,7 @@ import { DetectionSettingsForm } from "@/components/DetectionSettingsForm";
 import { ImageDownloader } from "@/components/ImageDownloader";
 import { toast } from "sonner";
 import { ProductData, QualityIssue, validateProducts } from "@/lib/utils/validation";
+import { motion } from "framer-motion";
 
 // Import the DetectionSettings type
 interface DetectionSettings {
@@ -264,7 +265,18 @@ export default function Home() {
                             onClick={() => handleAnalyzeData()}
                             disabled={isAnalyzing}
                           >
-                            {isAnalyzing ? "Analyzing..." : "Analyze for Issues"}
+                            {isAnalyzing ? (
+                              <span className="flex items-center gap-1.5">
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                  className="inline-block"
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </motion.div>
+                                Analyzing...
+                              </span>
+                            ) : "Analyze for Issues"}
                           </Button>
                         )}
                       </div>
@@ -304,8 +316,20 @@ export default function Home() {
                         variant="outline"
                         onClick={() => handleAnalyzeData()}
                         disabled={isAnalyzing}
+                        className="hidden md:inline-flex"
                       >
-                        {isAnalyzing ? "Re-analyzing..." : "Re-analyze Data"}
+                        {isAnalyzing ? (
+                          <span className="flex items-center gap-1.5">
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              className="inline-block"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </motion.div>
+                            Re-analyzing...
+                          </span>
+                        ) : "Re-analyze Data"}
                       </Button>
                     </>
                   )}
@@ -409,7 +433,25 @@ export default function Home() {
                           <span className="font-semibold">{issues.filter(issue => issue.issueType === "watermark").length}</span>
                         </div>
                       </div>
-                      <Badge variant="outline">{issues.length} Total</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{issues.length} Total</Badge>
+                        {issues.length > 0 && (
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-8 w-8"
+                            onClick={() => handleAnalyzeData()}
+                            disabled={isAnalyzing}
+                          >
+                            <motion.div
+                              animate={isAnalyzing ? { rotate: 360 } : { rotate: 0 }}
+                              transition={isAnalyzing ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 0 }}
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </motion.div>
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     
                     {/* Scrollable Issues Area */}
