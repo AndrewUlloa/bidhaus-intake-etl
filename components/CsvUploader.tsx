@@ -6,9 +6,11 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, AlertTriangle, Check } from "lucide-react";
 import { toast } from "sonner";
+import { parseCSV } from "@/lib/utils/validation";
+import { ProductData } from "@/lib/utils/validation";
 
 interface CsvUploaderProps {
-  onFileUploaded: (file: File) => void;
+  onFileUploaded: (file: File, data: ProductData[]) => void;
 }
 
 export function CsvUploader({ onFileUploaded }: CsvUploaderProps) {
@@ -33,17 +35,44 @@ export function CsvUploader({ onFileUploaded }: CsvUploaderProps) {
     // Set the selected file
     setSelectedFile(file);
     
-    // Simulate upload progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 5;
-      setUploadProgress(progress);
-      if (progress >= 100) {
-        clearInterval(interval);
-        onFileUploaded(file);
-        toast.success("File uploaded successfully");
+    // Read the file content
+    const reader = new FileReader();
+    
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(progress);
       }
-    }, 100);
+    };
+    
+    reader.onload = (event) => {
+      try {
+        const csvContent = event.target?.result as string;
+        if (!csvContent) {
+          throw new Error("Failed to read file content");
+        }
+        
+        // Parse the CSV data
+        const productData = parseCSV(csvContent);
+        
+        // Call the callback with the file and parsed data
+        setUploadProgress(100);
+        setTimeout(() => {
+          onFileUploaded(file, productData);
+          toast.success(`Processed ${productData.length} products successfully`);
+        }, 500);
+      } catch (err) {
+        setError(`Error processing file: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setUploadProgress(0);
+      }
+    };
+    
+    reader.onerror = () => {
+      setError("Error reading file");
+      setUploadProgress(0);
+    };
+    
+    reader.readAsText(file);
   };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -119,7 +148,7 @@ export function CsvUploader({ onFileUploaded }: CsvUploaderProps) {
                 <div className="w-full max-w-xs mx-auto">
                   <Progress value={uploadProgress} className="h-2" />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Uploading: {uploadProgress}%
+                    Processing: {uploadProgress}%
                   </p>
                 </div>
               )}
