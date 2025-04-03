@@ -124,7 +124,6 @@ export default function Home() {
           <h1 className="text-3xl font-bold">BidHaus Quality Manager</h1>
           <p className="text-muted-foreground">Detect and manage product listing quality issues</p>
         </div>
-        <Button variant="outline" onClick={() => setActiveTab("settings")}>Settings</Button>
       </header>
       
       {/* Mobile header (visible only on small screens) */}
@@ -133,7 +132,6 @@ export default function Home() {
           <h1 className="text-2xl font-bold">BidHaus Quality Manager</h1>
           <p className="text-muted-foreground">Detect and manage product listing quality issues</p>
         </div>
-        <Button variant="outline" onClick={() => setActiveTab("settings")}>Settings</Button>
       </header>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -181,7 +179,7 @@ export default function Home() {
           </Button>
         </div>
         
-        <div className="min-h-[700px]">
+        <div>
           <TabsContent value="upload" className="h-full">
             <Card className="h-full">
               <CardHeader>
