@@ -13,7 +13,6 @@ import { QualityIssueCard } from "@/components/QualityIssueCard";
 import { QualityIssueList } from "@/components/QualityIssueList";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { DetectionSettingsForm } from "@/components/DetectionSettingsForm";
-import { ImageDownloader } from "@/components/ImageDownloader";
 import { toast } from "sonner";
 import { ProductData, QualityIssue, validateProducts } from "@/lib/utils/validation";
 import { motion } from "framer-motion";
@@ -25,21 +24,6 @@ interface DetectionSettings {
   watermarkThreshold: number;
   enableImageScanning: boolean;
   customRegexPatterns: string;
-}
-
-// Add ImageSummary interface after DetectionSettings
-interface ImageData {
-  id: number;
-  sku: string;
-  original_url: string;
-  filename: string;
-  path: string;
-  row: number;
-}
-
-interface ImageSummary {
-  total_images: number;
-  images: ImageData[];
 }
 
 // Default detection settings
@@ -58,16 +42,12 @@ export default function Home() {
   const [products, setProducts] = useState<ProductData[]>([]);
   const [settings, setSettings] = useState<DetectionSettings>(defaultSettings);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
-  const [downloadedImagePaths, setDownloadedImagePaths] = useState<string[]>([]);
-  const [imageSummary, setImageSummary] = useState<ImageSummary | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("card");
 
   const handleFileUploaded = (file: File, data: ProductData[]) => {
     // Store the parsed products
     setProducts(data);
     setFileUploaded(true);
-    setSelectedCsvFile(file);
     toast.success(`CSV file processed: ${data.length} products loaded`);
     
     // Run validation with current settings
@@ -91,11 +71,6 @@ export default function Home() {
           phoneRegex: settings.phoneRegex,
           customRegexPatterns: settings.customRegexPatterns
         });
-        
-        // If we have downloaded images, add a note about watermark checking
-        if (downloadedImagePaths.length > 0 && imageSummary && imageSummary.total_images > 0) {
-          toast.info(`Don't forget to check the ${imageSummary.total_images} downloaded images for watermarks`);
-        }
         
         setIssues(detectedIssues);
         
@@ -138,21 +113,6 @@ export default function Home() {
     // Re-analyze data with new settings if we have products loaded
     if (products.length > 0) {
       handleAnalyzeData(products);
-    }
-  };
-
-  const handleImagesDownloaded = (imagePaths: string[], summary: ImageSummary | null) => {
-    setDownloadedImagePaths(imagePaths);
-    setImageSummary(summary);
-    
-    // If we have images downloaded and issues detected, we can now scan for watermarks
-    if (imagePaths.length > 0 && issues.length > 0) {
-      toast.info("You can now review product images for watermarks");
-    }
-    
-    // If we have image summary with actual images, show a message about it
-    if (summary && summary.total_images > 0) {
-      toast.success(`Downloaded ${summary.total_images} images for review`);
     }
   };
 
@@ -234,15 +194,9 @@ export default function Home() {
                 <ScrollArea className="h-full">
                   <div className="space-y-6 pr-4">
                     <CsvUploader onFileUploaded={handleFileUploaded} />
-                    
-                    {fileUploaded && (
-                      <div className="mt-6">
-                        <ImageDownloader 
-                          csvFile={selectedCsvFile} 
-                          onImagesDownloaded={handleImagesDownloaded}
-                        />
-                      </div>
-                    )}
+                    <p className="text-sm text-muted-foreground text-center">
+                      Supported format: CSV with headers
+                    </p>
                     
                     <Alert className="bg-muted/50 mt-6">
                       <Info className="h-4 w-4" />
@@ -253,48 +207,31 @@ export default function Home() {
                     </Alert>
                     
                     {fileUploaded && (
-                      <div className="bg-muted/30 p-4 rounded-md">
-                        <h3 className="text-sm font-medium mb-2">CSV Data Preview</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Loaded {products.length} products from CSV file.
-                        </p>
-                        {products.length > 0 && (
-                          <Button 
-                            className="mt-3" 
-                            size="sm"
-                            onClick={() => handleAnalyzeData()}
-                            disabled={isAnalyzing}
-                          >
-                            {isAnalyzing ? (
-                              <span className="flex items-center gap-1.5">
-                                <motion.div
-                                  animate={{ rotate: 360 }}
-                                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                  className="inline-block"
-                                >
-                                  <RefreshCw className="h-4 w-4" />
-                                </motion.div>
-                                Analyzing...
-                              </span>
-                            ) : "Analyze for Issues"}
-                          </Button>
-                        )}
+                      <div className="mt-6">
+                        <Button 
+                          className="w-full" 
+                          size="default"
+                          onClick={() => handleAnalyzeData()}
+                          disabled={isAnalyzing}
+                        >
+                          {isAnalyzing ? (
+                            <span className="flex items-center gap-1.5">
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                className="inline-block"
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </motion.div>
+                              Analyzing...
+                            </span>
+                          ) : "Analyze for Issues"}
+                        </Button>
                       </div>
                     )}
                   </div>
                 </ScrollArea>
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Supported format: CSV with headers
-                </p>
-                <Button 
-                  disabled={!fileUploaded || isAnalyzing} 
-                  onClick={() => setActiveTab("review")}
-                >
-                  View Results
-                </Button>
-              </CardFooter>
             </Card>
           </TabsContent>
           
@@ -480,9 +417,6 @@ export default function Home() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button disabled={issues.length === 0}>Export Report</Button>
-              </CardFooter>
             </Card>
           </TabsContent>
           

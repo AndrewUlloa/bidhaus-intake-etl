@@ -186,7 +186,7 @@ export function CsvUploader({ onFileUploaded }: CsvUploaderProps) {
               <>
                 <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-xs font-medium mb-1">Drag and drop your CSV file here</p>
-                <p className="text-[10px] text-muted-foreground mb-2">or click to browse files</p>
+                <p className="text-xs text-muted-foreground mb-2">or click to browse files</p>
                 <Input
                   id="csv-file-mobile"
                   type="file"
@@ -209,7 +209,7 @@ export function CsvUploader({ onFileUploaded }: CsvUploaderProps) {
                 {uploadProgress < 100 && (
                   <div className="w-full max-w-xs mx-auto">
                     <Progress value={uploadProgress} className="h-1" />
-                    <p className="text-[10px] text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Processing: {uploadProgress}%
                     </p>
                   </div>

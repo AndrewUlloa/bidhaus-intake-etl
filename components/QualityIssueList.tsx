@@ -176,75 +176,7 @@ export function QualityIssueList({
       {/* Filter controls - visible on all viewports */}
       <div className="sticky top-0 z-10 bg-background border-b mb-2">
         <div className="flex items-center justify-between p-2">
-          {/* Desktop filters */}
-          <div className="hidden md:flex items-center gap-2">
-            <span className="text-sm font-medium">Filter by:</span>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px] h-8">
-                <SelectValue placeholder="All Issues" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Issues</SelectItem>
-                <SelectItem value="vendor_info">Vendor Information</SelectItem>
-                <SelectItem value="phone_number">Phone Number</SelectItem>
-                <SelectItem value="watermark">Watermark</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Mobile filters */}
-          <div className="md:hidden flex items-center">
-            <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Filter className="h-4 w-4" />
-                  {typeFilter !== "all" ? getShortIssueLabel(typeFilter as IssueType) : "All Issues"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-[180px] p-0">
-                <div className="py-1">
-                  <div 
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "all" ? "bg-muted" : ""}`}
-                    onClick={() => {
-                      setTypeFilter("all");
-                      setFilterPopoverOpen(false);
-                    }}
-                  >
-                    All Issues
-                  </div>
-                  <div 
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "vendor_info" ? "bg-muted" : ""}`}
-                    onClick={() => {
-                      setTypeFilter("vendor_info");
-                      setFilterPopoverOpen(false);
-                    }}
-                  >
-                    Vendor Information
-                  </div>
-                  <div 
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "phone_number" ? "bg-muted" : ""}`}
-                    onClick={() => {
-                      setTypeFilter("phone_number");
-                      setFilterPopoverOpen(false);
-                    }}
-                  >
-                    Phone Number
-                  </div>
-                  <div 
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "watermark" ? "bg-muted" : ""}`}
-                    onClick={() => {
-                      setTypeFilter("watermark");
-                      setFilterPopoverOpen(false);
-                    }}
-                  >
-                    Watermark
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          {/* Select all/none controls */}
+          {/* Select all/none controls - Now on the left */}
           <div className="flex items-center gap-2">
             <div className="flex items-center">
               <Popover open={selectPopoverOpen} onOpenChange={setSelectPopoverOpen}>
@@ -298,6 +230,74 @@ export function QualityIssueList({
             <span className="text-xs text-muted-foreground ml-2">
               {filteredIssues.length} {filteredIssues.length === 1 ? 'issue' : 'issues'}
             </span>
+          </div>
+
+          {/* Desktop filters - Now on the right */}
+          <div className="hidden md:flex items-center gap-2">
+            <span className="text-sm font-medium">Filter by:</span>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px] h-8">
+                <SelectValue placeholder="All Issues" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Issues</SelectItem>
+                <SelectItem value="vendor_info">Vendor Information</SelectItem>
+                <SelectItem value="phone_number">Phone Number</SelectItem>
+                <SelectItem value="watermark">Watermark</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Mobile filters - Now on the right */}
+          <div className="md:hidden flex items-center">
+            <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                  <Filter className="h-4 w-4" />
+                  {typeFilter !== "all" ? getShortIssueLabel(typeFilter as IssueType) : "All Issues"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-[180px] p-0">
+                <div className="py-1">
+                  <div 
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "all" ? "bg-muted" : ""}`}
+                    onClick={() => {
+                      setTypeFilter("all");
+                      setFilterPopoverOpen(false);
+                    }}
+                  >
+                    All Issues
+                  </div>
+                  <div 
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "vendor_info" ? "bg-muted" : ""}`}
+                    onClick={() => {
+                      setTypeFilter("vendor_info");
+                      setFilterPopoverOpen(false);
+                    }}
+                  >
+                    Vendor Information
+                  </div>
+                  <div 
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "phone_number" ? "bg-muted" : ""}`}
+                    onClick={() => {
+                      setTypeFilter("phone_number");
+                      setFilterPopoverOpen(false);
+                    }}
+                  >
+                    Phone Number
+                  </div>
+                  <div 
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "watermark" ? "bg-muted" : ""}`}
+                    onClick={() => {
+                      setTypeFilter("watermark");
+                      setFilterPopoverOpen(false);
+                    }}
+                  >
+                    Watermark
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>
