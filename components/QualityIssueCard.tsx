@@ -117,7 +117,7 @@ export function QualityIssueCard({
               Ignore
             </Button>
             <Button size="sm" onClick={() => onMarkResolved(id)}>
-              Mark as Resolved
+              Mark as Reviewed
             </Button>
           </>
         ) : (
