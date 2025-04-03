@@ -110,61 +110,125 @@ export function CsvUploader({ onFileUploaded }: CsvUploaderProps) {
   return (
     <div className="grid gap-6">
       <div className="grid gap-3">
-        <Label htmlFor="csv-file">CSV File</Label>
-        <div
-          className={`border-2 ${
-            dragging ? "border-primary" : "border-dashed"
-          } rounded-lg p-10 text-center cursor-pointer hover:bg-muted/50 transition-colors`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={handleBrowseClick}
-        >
-          {!selectedFile ? (
-            <>
-              <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-sm font-medium mb-1">Drag and drop your CSV file here</p>
-              <p className="text-xs text-muted-foreground mb-4">or click to browse files</p>
-              <Input
-                id="csv-file"
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={handleInputChange}
-                ref={fileInputRef}
-              />
-              <Button variant="outline" size="sm" type="button">
-                Select File
-              </Button>
-            </>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-center gap-2 text-primary">
-                <Check className="h-5 w-5" />
-                <span className="font-medium">{selectedFile.name}</span>
-              </div>
-              
-              {uploadProgress < 100 && (
-                <div className="w-full max-w-xs mx-auto">
-                  <Progress value={uploadProgress} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Processing: {uploadProgress}%
-                  </p>
+        {/* Desktop version (hidden on small screens) */}
+        <div className="hidden sm:block">
+          <Label htmlFor="csv-file">CSV File</Label>
+          <div
+            className={`border-2 ${
+              dragging ? "border-primary" : "border-dashed"
+            } rounded-lg p-10 text-center cursor-pointer hover:bg-muted/50 transition-colors`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={handleBrowseClick}
+          >
+            {!selectedFile ? (
+              <>
+                <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-sm font-medium mb-1">Drag and drop your CSV file here</p>
+                <p className="text-xs text-muted-foreground mb-4">or click to browse files</p>
+                <Input
+                  id="csv-file"
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleInputChange}
+                  ref={fileInputRef}
+                />
+                <Button variant="outline" size="sm" type="button">
+                  Select File
+                </Button>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center gap-2 text-primary">
+                  <Check className="h-5 w-5" />
+                  <span className="font-medium">{selectedFile.name}</span>
                 </div>
-              )}
-              
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedFile(null);
-                }}
-              >
-                Choose a different file
-              </Button>
-            </div>
-          )}
+                
+                {uploadProgress < 100 && (
+                  <div className="w-full max-w-xs mx-auto">
+                    <Progress value={uploadProgress} className="h-2" />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Processing: {uploadProgress}%
+                    </p>
+                  </div>
+                )}
+                
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFile(null);
+                  }}
+                >
+                  Choose a different file
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile version (visible only on small screens) */}
+        <div className="sm:hidden">
+          <Label htmlFor="csv-file-mobile" className="text-sm">CSV File</Label>
+          <div
+            className={`border-2 ${
+              dragging ? "border-primary" : "border-dashed"
+            } rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={handleBrowseClick}
+          >
+            {!selectedFile ? (
+              <>
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-xs font-medium mb-1">Drag and drop your CSV file here</p>
+                <p className="text-[10px] text-muted-foreground mb-2">or click to browse files</p>
+                <Input
+                  id="csv-file-mobile"
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleInputChange}
+                  ref={fileInputRef}
+                />
+                <Button variant="outline" size="sm" type="button" className="h-7 text-xs">
+                  Select File
+                </Button>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 text-primary">
+                  <Check className="h-4 w-4" />
+                  <span className="font-medium text-xs truncate max-w-[200px]">{selectedFile.name}</span>
+                </div>
+                
+                {uploadProgress < 100 && (
+                  <div className="w-full max-w-xs mx-auto">
+                    <Progress value={uploadProgress} className="h-1" />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Processing: {uploadProgress}%
+                    </p>
+                  </div>
+                )}
+                
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-7 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFile(null);
+                  }}
+                >
+                  Choose a different file
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

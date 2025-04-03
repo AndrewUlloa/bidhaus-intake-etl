@@ -129,7 +129,8 @@ export function QualityIssueList({
 
   return (
     <div className="border rounded-md overflow-hidden">
-      <div className="overflow-x-auto">
+      {/* Horizontal scrolling container - only allows horizontal scroll */}
+      <div className="overflow-x-auto overflow-y-hidden">
         {/* Filters Bar */}
         <div className="bg-gray-50 dark:bg-gray-900/10 border-b p-2">
           <div className="flex items-center justify-between min-w-[1000px]">
@@ -243,9 +244,11 @@ export function QualityIssueList({
             </div>
           </div>
         )}
-        
-        {/* Scrollable Content */}
-        <div className="max-h-[500px] overflow-y-auto">
+      </div>
+      
+      {/* Vertical scrolling container - only allows vertical scroll */}
+      <div className="max-h-[500px] overflow-y-auto overflow-x-hidden">
+        <div className="overflow-x-auto overflow-y-hidden">
           <table className="w-full min-w-[1000px]">
             <tbody>
               {filteredIssues.length === 0 ? (

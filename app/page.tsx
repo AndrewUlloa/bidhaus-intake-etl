@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Info, Upload, FileCheck, Settings, AlertCircle, FileText, MessageSquare, Phone, Image as ImageIcon } from "lucide-react";
+import { Info, Upload, FileCheck, Settings, AlertCircle, MessageSquare, Phone, Image as ImageIcon } from "lucide-react";
 import { CsvUploader } from "@/components/CsvUploader";
 import { QualityIssueCard } from "@/components/QualityIssueCard";
 import { QualityIssueList } from "@/components/QualityIssueList";
@@ -15,7 +15,7 @@ import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { DetectionSettingsForm } from "@/components/DetectionSettingsForm";
 import { ImageDownloader } from "@/components/ImageDownloader";
 import { toast } from "sonner";
-import { ProductData, QualityIssue, validateProducts, parseCSV } from "@/lib/utils/validation";
+import { ProductData, QualityIssue, validateProducts } from "@/lib/utils/validation";
 
 // Import the DetectionSettings type
 interface DetectionSettings {
@@ -57,7 +57,6 @@ export default function Home() {
   const [products, setProducts] = useState<ProductData[]>([]);
   const [settings, setSettings] = useState<DetectionSettings>(defaultSettings);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isLoadingSample, setIsLoadingSample] = useState(false);
   const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
   const [downloadedImagePaths, setDownloadedImagePaths] = useState<string[]>([]);
   const [imageSummary, setImageSummary] = useState<ImageSummary | null>(null);
@@ -72,30 +71,6 @@ export default function Home() {
     
     // Run validation with current settings
     handleAnalyzeData(data);
-  };
-
-  const handleLoadSampleData = async () => {
-    setIsLoadingSample(true);
-    try {
-      const response = await fetch('/sample-data.csv');
-      if (!response.ok) {
-        throw new Error('Failed to load sample data');
-      }
-      
-      const csvText = await response.text();
-      const data = parseCSV(csvText);
-      
-      setProducts(data);
-      setFileUploaded(true);
-      toast.success(`Sample data loaded: ${data.length} products`);
-      
-      // Run validation
-      handleAnalyzeData(data);
-    } catch (error) {
-      toast.error(`Error loading sample data: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsLoadingSample(false);
-    }
   };
 
   const handleAnalyzeData = (dataToAnalyze: ProductData[] = products) => {
@@ -181,8 +156,9 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <header className="flex items-center justify-between mb-10">
+    <div className="container mx-auto py-10 px-4 sm:px-6">
+      {/* Desktop header (hidden on small screens) */}
+      <header className="hidden sm:flex sm:items-center sm:justify-between mb-10">
         <div>
           <h1 className="text-3xl font-bold">BidHaus Quality Manager</h1>
           <p className="text-muted-foreground">Detect and manage product listing quality issues</p>
@@ -190,8 +166,18 @@ export default function Home() {
         <Button variant="outline" onClick={() => setActiveTab("settings")}>Settings</Button>
       </header>
       
+      {/* Mobile header (visible only on small screens) */}
+      <header className="flex flex-col sm:hidden gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">BidHaus Quality Manager</h1>
+          <p className="text-muted-foreground">Detect and manage product listing quality issues</p>
+        </div>
+        <Button variant="outline" onClick={() => setActiveTab("settings")}>Settings</Button>
+      </header>
+      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8">
+        {/* Desktop tab list (hidden on small screens) */}
+        <TabsList className="hidden sm:grid w-full grid-cols-3 mb-8">
           <TabsTrigger value="upload" className="flex items-center gap-2">
             <Upload className="h-4 w-4" />
             Upload CSV
@@ -205,6 +191,34 @@ export default function Home() {
             Detection Settings
           </TabsTrigger>
         </TabsList>
+        
+        {/* Mobile tab list (visible only on small screens) */}
+        <div className="flex sm:hidden gap-2 mb-6 overflow-x-auto overflow-y-hidden">
+          <Button 
+            variant={activeTab === "upload" ? "default" : "outline"} 
+            className="flex items-center gap-1 flex-1"
+            onClick={() => setActiveTab("upload")}
+          >
+            <Upload className="h-4 w-4" />
+            Upload CSV
+          </Button>
+          <Button 
+            variant={activeTab === "review" ? "default" : "outline"} 
+            className="flex items-center gap-1 flex-1"
+            onClick={() => setActiveTab("review")}
+          >
+            <FileCheck className="h-4 w-4" />
+            Review Issues {issues.length > 0 && `(${issues.length})`}
+          </Button>
+          <Button 
+            variant={activeTab === "settings" ? "default" : "outline"} 
+            className="flex items-center gap-1 flex-1"
+            onClick={() => setActiveTab("settings")}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Button>
+        </div>
         
         <div className="min-h-[700px]">
           <TabsContent value="upload" className="h-full">
@@ -228,27 +242,6 @@ export default function Home() {
                         />
                       </div>
                     )}
-                    
-                    <div className="flex items-center justify-center">
-                      <div className="border-t w-full my-6"></div>
-                      <span className="bg-background px-4 text-xs text-muted-foreground">OR</span>
-                      <div className="border-t w-full my-6"></div>
-                    </div>
-                    
-                    <div className="text-center">
-                      <Button 
-                        variant="outline" 
-                        className="gap-2"
-                        onClick={handleLoadSampleData}
-                        disabled={isLoadingSample}
-                      >
-                        <FileText className="h-4 w-4" />
-                        {isLoadingSample ? "Loading..." : "Load Sample Data"}
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Try with our pre-made sample data containing quality issues
-                      </p>
-                    </div>
                     
                     <Alert className="bg-muted/50 mt-6">
                       <Info className="h-4 w-4" />
@@ -341,9 +334,9 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="flex flex-col h-full">
-                    {/* Sticky Stats Cards */}
-                    <div className="sticky top-0 bg-background z-10 pb-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                    {/* Desktop Stats Cards - Only visible on desktop */}
+                    <div className="hidden md:block sticky top-0 bg-background z-10 pb-4">
+                      <div className="grid grid-cols-3 gap-4 mb-2">
                         {/* Vendor Information */}
                         <Card className="bg-muted/30">
                           <CardContent className="p-4 flex items-center gap-4">
@@ -399,9 +392,28 @@ export default function Home() {
                         </Card>
                       </div>
                     </div>
+
+                    {/* Mobile Stats - Minimal compact version that takes less vertical space */}
+                    <div className="md:hidden flex justify-between items-center bg-background sticky top-0 z-10 pb-2 mb-2 text-sm border-b">
+                      <div className="flex gap-3">
+                        <div className="flex items-center gap-1">
+                          <MessageSquare className="h-4 w-4 text-primary" />
+                          <span className="font-semibold">{issues.filter(issue => issue.issueType === "vendor_info").length}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Phone className="h-4 w-4 text-primary" />
+                          <span className="font-semibold">{issues.filter(issue => issue.issueType === "phone_number").length}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <ImageIcon className="h-4 w-4 text-primary" />
+                          <span className="font-semibold">{issues.filter(issue => issue.issueType === "watermark").length}</span>
+                        </div>
+                      </div>
+                      <Badge variant="outline">{issues.length} Total</Badge>
+                    </div>
                     
                     {/* Scrollable Issues Area */}
-                    <div className="flex-1 overflow-auto">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden">
                       {viewMode === "card" ? (
                         <div className="space-y-4 pr-4">
                           {issues.map(issue => (
@@ -424,15 +436,7 @@ export default function Home() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <div className="flex gap-2">
-                  <Badge variant="outline">
-                    {issues.length} Total Issues
-                  </Badge>
-                  <Badge variant="outline">
-                    {issues.filter(i => i.resolved).length} Resolved
-                  </Badge>
-                </div>
+              <CardFooter className="flex justify-end">
                 <Button disabled={issues.length === 0}>Export Report</Button>
               </CardFooter>
             </Card>
