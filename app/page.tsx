@@ -426,11 +426,13 @@ export default function Home() {
                           ))}
                         </div>
                       ) : (
-                        <QualityIssueList 
-                          issues={issues}
-                          onMarkResolved={handleMarkResolved}
-                          onIgnore={handleIgnore}
-                        />
+                        <div className="h-full max-h-[calc(100vh-240px)]">
+                          <QualityIssueList 
+                            issues={issues}
+                            onMarkResolved={handleMarkResolved}
+                            onIgnore={handleIgnore}
+                          />
+                        </div>
                       )}
                     </div>
                   </div>

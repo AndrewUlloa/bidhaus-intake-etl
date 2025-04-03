@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, Check, Image as ImageIcon, MessageSquare, ChevronDown, Trash } from "lucide-react";
+import { AlertTriangle, Check, Image as ImageIcon, MessageSquare, ChevronDown, Trash, Filter } from "lucide-react";
 import { useState, useEffect } from "react";
 import { 
   Popover,
@@ -45,6 +45,7 @@ export function QualityIssueList({
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [selectPopoverOpen, setSelectPopoverOpen] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   
   // Reset selection when filter changes
   useEffect(() => {
@@ -127,129 +128,198 @@ export function QualityIssueList({
     }
   };
 
+  // Simple label for mobile view
+  const getShortIssueLabel = (issueType: IssueType) => {
+    switch (issueType) {
+      case "vendor_info":
+        return "Vendor";
+      case "phone_number":
+        return "Phone";
+      case "watermark":
+        return "Watermark";
+      default:
+        return "Other";
+    }
+  };
+
   return (
-    <div className="border rounded-md overflow-hidden">
-      {/* Horizontal scrolling container - only allows horizontal scroll */}
-      <div className="overflow-x-auto overflow-y-hidden">
-        {/* Filters Bar */}
-        <div className="bg-gray-50 dark:bg-gray-900/10 border-b p-2">
-          <div className="flex items-center justify-between min-w-[1000px]">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium ml-2">Filter by:</span>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[180px] h-8">
-                  <SelectValue placeholder="All Issues" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Issues</SelectItem>
-                  <SelectItem value="vendor_info">Vendor Information</SelectItem>
-                  <SelectItem value="phone_number">Phone Number</SelectItem>
-                  <SelectItem value="watermark">Watermark</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {filteredIssues.length} issues {typeFilter !== "all" && " filtered"}
-            </div>
+    <div className="relative">
+      {/* Selection banner - only appears when items are selected */}
+      {selectedIssues.length > 0 && (
+        <div className="sticky top-0 left-0 right-0 z-20 bg-blue-50 dark:bg-blue-950/20 border-b p-2 flex items-center justify-between">
+          <span className="text-sm font-medium ml-2">
+            {selectedIssues.length} selected
+          </span>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={ignoreSelected}
+              className="whitespace-nowrap"
+            >
+              <Trash className="h-4 w-4 md:mr-1" />
+              <span className="hidden md:inline">Ignore Selected</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="whitespace-nowrap"
+              onClick={markSelectedAsReviewed}
+            >
+              <Check className="h-4 w-4 md:mr-1" />
+              <span className="hidden md:inline">Mark Selected as Reviewed</span>
+            </Button>
           </div>
         </div>
-        
-        {/* Fixed Header */}
-        <div className="border-b">
-          <table className="w-full min-w-[1000px]">
+      )}
+
+      {/* Filter controls - visible on all viewports */}
+      <div className="sticky top-0 z-10 bg-background border-b mb-2">
+        <div className="flex items-center justify-between p-2">
+          {/* Desktop filters */}
+          <div className="hidden md:flex items-center gap-2">
+            <span className="text-sm font-medium">Filter by:</span>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px] h-8">
+                <SelectValue placeholder="All Issues" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Issues</SelectItem>
+                <SelectItem value="vendor_info">Vendor Information</SelectItem>
+                <SelectItem value="phone_number">Phone Number</SelectItem>
+                <SelectItem value="watermark">Watermark</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Mobile filters */}
+          <div className="md:hidden flex items-center">
+            <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                  <Filter className="h-4 w-4" />
+                  {typeFilter !== "all" ? getShortIssueLabel(typeFilter as IssueType) : "All Issues"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-[180px] p-0">
+                <div className="py-1">
+                  <div 
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "all" ? "bg-muted" : ""}`}
+                    onClick={() => {
+                      setTypeFilter("all");
+                      setFilterPopoverOpen(false);
+                    }}
+                  >
+                    All Issues
+                  </div>
+                  <div 
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "vendor_info" ? "bg-muted" : ""}`}
+                    onClick={() => {
+                      setTypeFilter("vendor_info");
+                      setFilterPopoverOpen(false);
+                    }}
+                  >
+                    Vendor Information
+                  </div>
+                  <div 
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "phone_number" ? "bg-muted" : ""}`}
+                    onClick={() => {
+                      setTypeFilter("phone_number");
+                      setFilterPopoverOpen(false);
+                    }}
+                  >
+                    Phone Number
+                  </div>
+                  <div 
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "watermark" ? "bg-muted" : ""}`}
+                    onClick={() => {
+                      setTypeFilter("watermark");
+                      setFilterPopoverOpen(false);
+                    }}
+                  >
+                    Watermark
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          {/* Select all/none controls */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center">
+              <Popover open={selectPopoverOpen} onOpenChange={setSelectPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <div className="flex items-center cursor-pointer">
+                    <Checkbox 
+                      checked={getSelectAllState()} 
+                      onCheckedChange={() => {
+                        if (filteredIssues.length > 0 && selectedIssues.length === filteredIssues.length) {
+                          deselectAll();
+                        } else {
+                          selectAll();
+                        }
+                      }}
+                      className="cursor-pointer"
+                    />
+                    <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground cursor-pointer" />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[150px] p-0">
+                  <div className="py-1">
+                    <div 
+                      className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50" 
+                      onClick={selectAll}
+                    >
+                      All
+                    </div>
+                    <div 
+                      className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50" 
+                      onClick={deselectAll}
+                    >
+                      None
+                    </div>
+                    <div 
+                      className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50" 
+                      onClick={selectReviewed}
+                    >
+                      Reviewed
+                    </div>
+                    <div 
+                      className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50" 
+                      onClick={selectUnreviewed}
+                    >
+                      Unreviewed
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <span className="text-xs text-muted-foreground ml-2">
+              {filteredIssues.length} {filteredIssues.length === 1 ? 'issue' : 'issues'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Table View - for all viewports with responsive design */}
+      <div className="border rounded-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px]">
             <thead>
-              <tr>
-                <th className="w-[50px] h-12 text-left p-2 font-medium">
-                  <Popover open={selectPopoverOpen} onOpenChange={setSelectPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <div className="flex items-center cursor-pointer">
-                        <Checkbox 
-                          checked={getSelectAllState()} 
-                          onCheckedChange={() => {
-                            if (filteredIssues.length > 0 && selectedIssues.length === filteredIssues.length) {
-                              deselectAll();
-                            } else {
-                              selectAll();
-                            }
-                          }}
-                          className="cursor-pointer"
-                        />
-                        <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground cursor-pointer" />
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent align="start" className="w-[150px] p-0">
-                      <div className="py-1">
-                        <div 
-                          className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50" 
-                          onClick={selectAll}
-                        >
-                          All
-                        </div>
-                        <div 
-                          className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50" 
-                          onClick={deselectAll}
-                        >
-                          None
-                        </div>
-                        <div 
-                          className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50" 
-                          onClick={selectReviewed}
-                        >
-                          Reviewed
-                        </div>
-                        <div 
-                          className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50" 
-                          onClick={selectUnreviewed}
-                        >
-                          Unreviewed
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+              <tr className="bg-muted/40">
+                <th className="w-[50px] h-10 text-left p-2 font-medium"></th>
+                <th className="w-[30%] h-10 text-left p-2 font-medium">
+                  <span className="hidden md:inline">Issue</span>
+                  <span className="md:hidden">Type</span>
                 </th>
-                <th className="w-[350px] h-12 text-left p-2 font-medium">Issue</th>
-                <th className="w-[430px] h-12 text-left p-2 font-medium">Description</th>
-                <th className="w-[130px] h-12 text-right p-2 font-medium">Actions</th>
+                <th className="w-[45%] h-10 text-left p-2 font-medium">
+                  <span className="hidden sm:inline">Description</span>
+                  <span className="sm:hidden">Info</span>
+                </th>
+                <th className="w-[20%] h-10 text-right p-2 font-medium">Actions</th>
               </tr>
             </thead>
-          </table>
-        </div>
-        
-        {/* Selection Info Banner */}
-        {selectedIssues.length > 0 && (
-          <div className="bg-blue-50 dark:bg-blue-950/20 border-b p-2">
-            <div className="flex items-center justify-between min-w-[1000px]">
-              <span className="text-sm font-medium ml-2">
-                All {selectedIssues.length} issues on this page are selected
-              </span>
-              <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={ignoreSelected}
-                >
-                  <Trash className="h-4 w-4 mr-1" />
-                  Ignore Selected
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex items-center gap-1"
-                  onClick={markSelectedAsReviewed}
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Mark Selected as Reviewed
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* Vertical scrolling container - only allows vertical scroll */}
-      <div className="max-h-[500px] overflow-y-auto overflow-x-hidden">
-        <div className="overflow-x-auto overflow-y-hidden">
-          <table className="w-full min-w-[1000px]">
             <tbody>
               {filteredIssues.length === 0 ? (
                 <tr>
@@ -265,33 +335,34 @@ export function QualityIssueList({
                       ${issue.resolved ? "bg-gray-50 dark:bg-gray-900/5" : ""} 
                       ${selectedIssues.includes(issue.id) ? "bg-blue-50 dark:bg-blue-900/10" : ""}`}
                   >
-                    <td className="p-2 align-middle w-[50px]">
+                    <td className="p-2 align-middle">
                       <Checkbox 
                         checked={selectedIssues.includes(issue.id)}
                         onCheckedChange={() => toggleSelect(issue.id)} 
+                        className="h-5 w-5"
                       />
                     </td>
-                    <td className="p-2 align-middle w-[350px]">
-                      <div className="flex items-center">
+                    <td className="p-2 align-middle">
+                      <div className="flex flex-col md:flex-row md:items-center gap-1">
                         <Badge variant={issue.resolved ? "outline" : "secondary"} className="flex items-center gap-1 mr-3">
                           {renderIssueIcon(issue.issueType)}
-                          {getIssueLabel(issue.issueType)}
+                          <span className="hidden md:inline">{getIssueLabel(issue.issueType)}</span>
+                          <span className="md:hidden">{getShortIssueLabel(issue.issueType)}</span>
                         </Badge>
                         <div>
-                          <div className="font-medium">{issue.productName}</div>
-                          <div className="text-xs text-muted-foreground">ID: {issue.productId}</div>
+                          <div className="text-sm font-medium line-clamp-1">{issue.productName}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="p-2 align-middle w-[430px]">
-                      <div className="text-sm">
+                    <td className="p-2 align-middle">
+                      <div className="text-xs md:text-sm">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="line-clamp-1 text-ellipsis overflow-hidden">
                                 {issue.description}
                                 {issue.details && (
-                                  <span className="ml-1 font-medium">
+                                  <span className="ml-1 font-medium hidden md:inline">
                                     Match: &ldquo;{issue.details}&rdquo;
                                   </span>
                                 )}
@@ -309,25 +380,27 @@ export function QualityIssueList({
                         </TooltipProvider>
                       </div>
                     </td>
-                    <td className="p-2 align-middle w-[130px] text-right whitespace-nowrap">
+                    <td className="p-2 align-middle text-right whitespace-nowrap">
                       {!issue.resolved ? (
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => onIgnore(issue.id)}>
-                            Ignore
+                        <div className="flex justify-end gap-1 sm:gap-2">
+                          <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-3" onClick={() => onIgnore(issue.id)}>
+                            <span className="hidden sm:inline">Ignore</span>
+                            <Trash className="h-4 w-4 sm:hidden" />
                           </Button>
                           <Button 
                             variant="ghost" 
-                            size="sm" 
-                            className="flex items-center gap-1"
+                            size="sm"
+                            className="h-8 px-2 sm:px-3 flex items-center gap-1"
                             onClick={() => onMarkResolved(issue.id)}
                           >
                             <Check className="h-4 w-4" />
-                            Reviewed
+                            <span className="hidden sm:inline">Reviewed</span>
                           </Button>
                         </div>
                       ) : (
-                        <Button variant="ghost" size="sm" onClick={() => onMarkResolved(issue.id)}>
-                          Undo
+                        <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-3" onClick={() => onMarkResolved(issue.id)}>
+                          <span className="hidden sm:inline">Undo</span>
+                          <Check className="h-4 w-4 sm:hidden" />
                         </Button>
                       )}
                     </td>
