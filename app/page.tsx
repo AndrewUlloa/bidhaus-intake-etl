@@ -44,7 +44,7 @@ interface ImageSummary {
 // Default detection settings
 const defaultSettings: DetectionSettings = {
   vendorRegex: "\\b(company|vendor|store|consignor|seller)\\b",
-  phoneRegex: "\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b",
+  phoneRegex: "(\\+\\d{1,3}[\\s-]?)?(\\(\\d{3}\\)\\s?\\d{3}-\\d{4})",
   watermarkThreshold: 50,
   enableImageScanning: true,
   customRegexPatterns: ""
@@ -294,7 +294,7 @@ export default function Home() {
           </TabsContent>
           
           <TabsContent value="review" className="h-full">
-            <Card className="h-full">
+            <Card className="h-full flex flex-col">
               <CardHeader className="flex flex-row justify-between items-start">
                 <div>
                   <CardTitle>Review Flagged Issues</CardTitle>
@@ -318,7 +318,7 @@ export default function Home() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="h-[500px]">
+              <CardContent className="flex-1 flex flex-col h-[500px] pb-0">
                 {!fileUploaded ? (
                   <div className="h-full flex items-center justify-center">
                     <Alert className="max-w-md">
@@ -340,10 +340,10 @@ export default function Home() {
                     </Alert>
                   </div>
                 ) : (
-                  <ScrollArea className="h-full">
-                    <div className="space-y-6 pr-4">
-                      {/* Bento Cards for Issue Counts */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="flex flex-col h-full">
+                    {/* Sticky Stats Cards */}
+                    <div className="sticky top-0 bg-background z-10 pb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
                         {/* Vendor Information */}
                         <Card className="bg-muted/30">
                           <CardContent className="p-4 flex items-center gap-4">
@@ -398,10 +398,12 @@ export default function Home() {
                           </CardContent>
                         </Card>
                       </div>
-                      
-                      {/* Issues in Card or List View */}
+                    </div>
+                    
+                    {/* Scrollable Issues Area */}
+                    <div className="flex-1 overflow-auto">
                       {viewMode === "card" ? (
-                        <div className="space-y-4">
+                        <div className="space-y-4 pr-4">
                           {issues.map(issue => (
                             <QualityIssueCard
                               key={issue.id}
@@ -419,7 +421,7 @@ export default function Home() {
                         />
                       )}
                     </div>
-                  </ScrollArea>
+                  </div>
                 )}
               </CardContent>
               <CardFooter className="flex justify-between">
