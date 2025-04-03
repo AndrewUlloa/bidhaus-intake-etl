@@ -344,7 +344,7 @@ export function QualityIssueList({
                     </td>
                     <td className="p-2 align-middle">
                       <div className="flex flex-col md:flex-row md:items-center gap-1">
-                        <Badge variant={issue.resolved ? "outline" : "secondary"} className="flex items-center gap-1 mr-3">
+                        <Badge variant={issue.resolved ? "outline" : "destructive"} className="flex items-center gap-1 mr-3">
                           {renderIssueIcon(issue.issueType)}
                           <span className="hidden md:inline">{getIssueLabel(issue.issueType)}</span>
                           <span className="md:hidden">{getShortIssueLabel(issue.issueType)}</span>
