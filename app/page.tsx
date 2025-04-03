@@ -1,103 +1,148 @@
-import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Info, Upload, FileCheck, Settings, AlertCircle } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="container mx-auto py-10">
+      <header className="flex items-center justify-between mb-10">
+        <div>
+          <h1 className="text-3xl font-bold">BidHaus Quality Manager</h1>
+          <p className="text-muted-foreground">Detect and manage product listing quality issues</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <Button>Settings</Button>
+      </header>
+      
+      <Tabs defaultValue="upload" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsTrigger value="upload" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Upload CSV
+          </TabsTrigger>
+          <TabsTrigger value="review" className="flex items-center gap-2">
+            <FileCheck className="h-4 w-4" />
+            Review Issues
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Detection Settings
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upload">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Product Data</CardTitle>
+              <CardDescription>
+                Upload your CSV file containing product listings to check for quality issues
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6">
+                <div className="grid gap-3">
+                  <Label htmlFor="csv-file">CSV File</Label>
+                  <div className="border-2 border-dashed rounded-lg p-10 text-center cursor-pointer hover:bg-muted/50">
+                    <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-sm font-medium mb-1">Drag and drop your CSV file here</p>
+                    <p className="text-xs text-muted-foreground mb-4">or click to browse files</p>
+                    <Input id="csv-file" type="file" accept=".csv" className="hidden" />
+                    <Button variant="outline" size="sm">Select File</Button>
+                  </div>
+                </div>
+                
+                <Alert className="bg-muted/50">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Detection Information</AlertTitle>
+                  <AlertDescription>
+                    We&apos;ll scan for vendor names, phone numbers, and potential watermarks in images
+                  </AlertDescription>
+                </Alert>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button>Upload and Analyze</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="review">
+          <Card>
+            <CardHeader>
+              <CardTitle>Review Flagged Issues</CardTitle>
+              <CardDescription>
+                Review and address quality issues detected in your product listings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6">
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>No data available</AlertTitle>
+                  <AlertDescription>
+                    Please upload a CSV file first to see flagged quality issues
+                  </AlertDescription>
+                </Alert>
+                
+                <ScrollArea className="h-[400px] w-full rounded-md border">
+                  <div className="p-4">
+                    <p className="text-sm text-muted-foreground text-center py-10">
+                      Flagged items will appear here after analysis
+                    </p>
+                  </div>
+                </ScrollArea>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <div className="flex gap-2">
+                <Badge variant="outline">0 Total Issues</Badge>
+                <Badge variant="outline">0 Resolved</Badge>
+              </div>
+              <Button disabled>Export Report</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>Detection Settings</CardTitle>
+              <CardDescription>
+                Configure rules for detecting quality issues in product listings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6">
+                <div className="grid gap-3">
+                  <Label htmlFor="vendor-regex">Vendor Name Pattern</Label>
+                  <Input id="vendor-regex" placeholder="Regular expression to detect vendor names" />
+                  <p className="text-xs text-muted-foreground">Example: \b(company|vendor|store)\b</p>
+                </div>
+                
+                <div className="grid gap-3">
+                  <Label htmlFor="phone-regex">Phone Number Pattern</Label>
+                  <Input id="phone-regex" placeholder="Regular expression to detect phone numbers" />
+                  <p className="text-xs text-muted-foreground">Example: \b\d{3}[-.]?\d{3}[-.]?\d{4}\b</p>
+                </div>
+                
+                <div className="grid gap-3">
+                  <Label htmlFor="watermark-threshold">Watermark Detection Threshold</Label>
+                  <Input id="watermark-threshold" type="range" min="0" max="100" defaultValue="50" />
+                  <p className="text-xs text-muted-foreground">Higher values mean stricter detection</p>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button>Save Settings</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
