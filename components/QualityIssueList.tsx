@@ -144,35 +144,6 @@ export function QualityIssueList({
 
   return (
     <div className="relative">
-      {/* Selection banner - only appears when items are selected */}
-      {selectedIssues.length > 0 && (
-        <div className="sticky top-0 left-0 right-0 z-20 bg-blue-50 dark:bg-blue-950/20 border-b p-2 flex items-center justify-between">
-          <span className="text-sm font-medium ml-2">
-            {selectedIssues.length} selected
-          </span>
-          <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={ignoreSelected}
-              className="whitespace-nowrap"
-            >
-              <Trash className="h-4 w-4 md:mr-1" />
-              <span className="hidden md:inline">Ignore Selected</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="whitespace-nowrap"
-              onClick={markSelectedAsReviewed}
-            >
-              <Check className="h-4 w-4 md:mr-1" />
-              <span className="hidden md:inline">Mark Selected as Reviewed</span>
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Filter controls - visible on all viewports */}
       <div className="sticky top-0 z-10 bg-background border-b mb-2">
         <div className="flex items-center justify-between p-2">
@@ -191,7 +162,7 @@ export function QualityIssueList({
                           selectAll();
                         }
                       }}
-                      className="cursor-pointer"
+                      className="cursor-pointer h-5 w-5"
                     />
                     <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground cursor-pointer" />
                   </div>
@@ -301,6 +272,35 @@ export function QualityIssueList({
           </div>
         </div>
       </div>
+
+      {/* Selection banner - moved between filters and table */}
+      {selectedIssues.length > 0 && (
+        <div className="bg-blue-50 dark:bg-blue-950/20 border rounded-md mb-4 p-2 flex items-center justify-between">
+          <span className="text-sm font-medium ml-2">
+            {selectedIssues.length} selected
+          </span>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={ignoreSelected}
+              className="whitespace-nowrap"
+            >
+              <Trash className="h-4 w-4 md:mr-1" />
+              <span className="hidden md:inline">Ignore Selected</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="whitespace-nowrap"
+              onClick={markSelectedAsReviewed}
+            >
+              <Check className="h-4 w-4 md:mr-1" />
+              <span className="hidden md:inline">Mark Selected as Reviewed</span>
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Table View - for all viewports with responsive design */}
       <div className="border rounded-md overflow-hidden">
