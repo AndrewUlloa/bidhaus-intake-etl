@@ -77,7 +77,6 @@ export default function Home() {
   const [loadingImageCount, setLoadingImageCount] = useState(0);
   const [processedImageCount, setProcessedImageCount] = useState(0);
   const [totalImageCount, setTotalImageCount] = useState(0);
-  const [currentProcessingUrl, setCurrentProcessingUrl] = useState<string | null>(null);
 
   // Calculate issue statistics
   const totalIssueCount = issues.reduce((count, issue) => count + issue.issueTypes.length, 0);
@@ -93,10 +92,6 @@ export default function Home() {
 
   const phoneCount = issues.reduce((count, issue) => 
     count + issue.issueTypes.filter(t => t.type === "phone_number").length, 0
-  );
-
-  const otherCount = issues.reduce((count, issue) => 
-    count + issue.issueTypes.filter(t => t.type === "other").length, 0
   );
 
   // Filter issues based on selected type
@@ -142,8 +137,14 @@ export default function Home() {
     // Use async function to validate products with streaming updates
     (async () => {
       try {
+        // Add a flag to track if any issues were found during this analysis
+        let issuesFoundDuringAnalysis = false;
+        
         // Handle streaming updates for each issue found
         const handleIssueFound = (issue: QualityIssue) => {
+          // Mark that we found at least one issue
+          issuesFoundDuringAnalysis = true;
+          
           setIssues(prev => {
             // Check if this product already has an issue
             const existingIssue = prev.find(i => i.id === issue.id);
@@ -188,11 +189,6 @@ export default function Home() {
             const product = productsWithImagesList[i];
             const currentImageNum = i + 1;
             
-            // Set current processing URL if defined
-            if (product.imageUrl) {
-              setCurrentProcessingUrl(product.imageUrl);
-            }
-            
             // Update toast for each processing step
             toast.loading(`Processing image ${currentImageNum}/${productsWithImages}: ${product.name}`, { id: toastId });
             
@@ -213,6 +209,9 @@ export default function Home() {
               
               // If we found a watermark, add the issue
               if (watermarkIssue) {
+                // Mark that we found at least one issue
+                issuesFoundDuringAnalysis = true;
+                
                 // Check if we already have an issue for this product
                 setIssues(prev => {
                   const existingIssue = prev.find(i => i.id === product.id);
@@ -260,22 +259,39 @@ export default function Home() {
                 
                 return newCount;
               });
-            } finally {
-              // At the end of the function in the finally block:
-              setCurrentProcessingUrl(null);
             }
           }
         }
         
-        // Successfully processed all items
-        if (totalIssueCount > 0) {
-          toast.warning(`Found ${totalIssueCount} quality issues`, { id: toastId });
+        // After all processing is done, show the appropriate toast
+        if (issuesFoundDuringAnalysis) {
+          // If we found issues during analysis, always show this message
+          toast.warning(`Found quality issues`, { id: toastId });
           
-          // Show detailed toast with the correct counts
-          toast.info(
-            `Issues breakdown: ${watermarkCount} watermarks, ${vendorCount} vendor info, ${phoneCount} phone numbers, ${otherCount} other issues`
+          // Count issues by type for the detailed message
+          const currentIssues = [...issues]; // Create a copy of the current state
+          const currentWatermarkCount = currentIssues.reduce((count, issue) => 
+            count + issue.issueTypes.filter(t => t.type === "watermark").length, 0
           );
+          const currentVendorCount = currentIssues.reduce((count, issue) => 
+            count + issue.issueTypes.filter(t => t.type === "vendor_info").length, 0
+          );
+          const currentPhoneCount = currentIssues.reduce((count, issue) => 
+            count + issue.issueTypes.filter(t => t.type === "phone_number").length, 0
+          );
+          
+          // Calculate total count of issue types for the toast
+          const totalIssueTypesCount = currentWatermarkCount + currentVendorCount + currentPhoneCount;
+          
+          // Only show breakdown if we actually have any issue counts to report
+          if (totalIssueTypesCount > 0) {
+            // Show detailed toast with the correct counts
+            toast.info(
+              `Issues breakdown: ${currentWatermarkCount} watermarks, ${currentVendorCount} vendor info, ${currentPhoneCount} phone numbers`
+            );
+          }
         } else {
+          // Only show "no issues" if we're sure no issues were found during analysis
           toast.success("No quality issues found", { id: toastId });
         }
         
