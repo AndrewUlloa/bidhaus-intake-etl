@@ -462,7 +462,7 @@ export default function Home() {
             <Card className="h-full flex flex-col">
               <CardHeader>
                 <div className="flex flex-row justify-between items-start w-full">
-                  <div>
+                  <div className="flex flex-col gap-1.5">
                     <CardTitle>Review Flagged Issues</CardTitle>
                     <CardDescription>
                       Review and address quality issues detected in your product listings
