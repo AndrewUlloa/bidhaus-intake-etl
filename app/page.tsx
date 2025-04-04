@@ -194,7 +194,7 @@ export default function Home() {
             }
             
             // Update toast for each processing step
-            toast.loading(`Processing ${currentImageNum}/${productsWithImages} image URLs`, { id: toastId });
+            toast.loading(`Processing image ${currentImageNum}/${productsWithImages}: ${product.name}`, { id: toastId });
             
             try {
               const watermarkIssue = await checkImageForWatermark(product.imageUrl!, product.name, product.id);
