@@ -332,14 +332,16 @@ export default function Home() {
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6">
       {/* Desktop header (hidden on small screens) */}
-      <header className="hidden sm:flex sm:items-center sm:justify-between mb-10">
-        <div>
+      <header className="hidden sm:flex sm:items-center mb-10 relative">
+        <div className="w-full text-center">
           <h1 className="text-3xl font-bold">BidHaus Quality Manager</h1>
           <p className="text-muted-foreground">
             Detect and manage product listing quality issues
           </p>
         </div>
-        <ThemeToggle />
+        <div className="absolute right-0">
+          <ThemeToggle />
+        </div>
       </header>
       
       {/* Mobile theme toggle (absolute positioned) */}
