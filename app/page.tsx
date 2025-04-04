@@ -14,9 +14,38 @@ import { QualityIssueList } from "@/components/QualityIssueList";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { DetectionSettingsForm } from "@/components/DetectionSettingsForm";
 import { toast } from "sonner";
-import { ProductData, QualityIssue, validateProducts } from "@/lib/utils/validation";
+import { ProductData, QualityIssue, validateProducts, checkImageForWatermark } from "@/lib/utils/validation";
 import { motion } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Skeleton card component for loading state
+function SkeletonIssueCard() {
+  return (
+    <Card className="h-full">
+      <CardHeader className="pb-2">
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-6 w-full" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4">
+          <div>
+            <Skeleton className="h-4 w-28 mb-2" />
+            <Skeleton className="h-4 w-full mb-1" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+          <Skeleton className="h-32 w-full" />
+        </div>
+      </CardContent>
+      <CardFooter className="flex flex-col gap-2 px-3 py-3 mt-auto">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+      </CardFooter>
+    </Card>
+  );
+}
 
 // Import the DetectionSettings type
 interface DetectionSettings {
@@ -45,11 +74,35 @@ export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("card");
   const [issueTypeFilter, setIssueTypeFilter] = useState<string>("all");
+  const [loadingImageCount, setLoadingImageCount] = useState(0);
+  const [processedImageCount, setProcessedImageCount] = useState(0);
+  const [totalImageCount, setTotalImageCount] = useState(0);
+  const [currentProcessingUrl, setCurrentProcessingUrl] = useState<string | null>(null);
+
+  // Calculate issue statistics
+  const totalIssueCount = issues.reduce((count, issue) => count + issue.issueTypes.length, 0);
+
+  // Count issues by type
+  const watermarkCount = issues.reduce((count, issue) => 
+    count + issue.issueTypes.filter(t => t.type === "watermark").length, 0
+  );
+
+  const vendorCount = issues.reduce((count, issue) => 
+    count + issue.issueTypes.filter(t => t.type === "vendor_info").length, 0
+  );
+
+  const phoneCount = issues.reduce((count, issue) => 
+    count + issue.issueTypes.filter(t => t.type === "phone_number").length, 0
+  );
+
+  const otherCount = issues.reduce((count, issue) => 
+    count + issue.issueTypes.filter(t => t.type === "other").length, 0
+  );
 
   // Filter issues based on selected type
   const filteredIssues = issues.filter(issue => {
     if (issueTypeFilter === "all") return true;
-    return issue.issueType === issueTypeFilter;
+    return issue.issueTypes.some(t => t.type === issueTypeFilter);
   });
 
   const handleFileUploaded = (file: File, data: ProductData[]) => {
@@ -69,33 +122,172 @@ export default function Home() {
     }
 
     setIsAnalyzing(true);
+    setIssues([]);
     
-    // Simulate processing delay for larger files
-    setTimeout(() => {
+    const toastId = toast.loading("Analyzing product data...");
+    
+    // Count how many products have images to check
+    const productsWithImages = dataToAnalyze.filter(
+      product => settings.enableImageScanning && product.imageUrl && product.imageUrl.trim() !== ''
+    ).length;
+    
+    setTotalImageCount(productsWithImages);
+    setProcessedImageCount(0);
+    
+    // Set initial skeletons if we have images to process
+    if (productsWithImages > 0) {
+      setLoadingImageCount(Math.min(productsWithImages, 8));
+    }
+    
+    // Use async function to validate products with streaming updates
+    (async () => {
       try {
-        // Validate the products using current settings
-        const detectedIssues = validateProducts(dataToAnalyze, {
+        // Handle streaming updates for each issue found
+        const handleIssueFound = (issue: QualityIssue) => {
+          setIssues(prev => {
+            // Check if this product already has an issue
+            const existingIssue = prev.find(i => i.id === issue.id);
+            if (existingIssue) {
+              // Update existing issue
+              return prev.map(i => 
+                i.id === issue.id 
+                  ? issue // Replace with the updated issue that has all issue types
+                  : i
+              );
+            } else {
+              // Add new issue
+              return [...prev, issue];
+            }
+          });
+          
+          // Check if any of the issue types is a watermark
+          const hasWatermarkIssue = issue.issueTypes.some(t => t.type === "watermark");
+          if (hasWatermarkIssue) {
+            toast.warning(`Watermark detected in ${issue.productName}`, {
+              duration: 3000,
+            });
+          }
+        };
+        
+        // Validate the text-based issues first
+        await validateProducts(dataToAnalyze, {
           vendorRegex: settings.vendorRegex,
           phoneRegex: settings.phoneRegex,
-          customRegexPatterns: settings.customRegexPatterns
-        });
+          customRegexPatterns: settings.customRegexPatterns,
+          enableImageScanning: false // Don't process images yet
+        }, handleIssueFound);
         
-        setIssues(detectedIssues);
+        // Now handle images separately to update progress for each
+        if (settings.enableImageScanning && productsWithImages > 0) {
+          const productsWithImagesList = dataToAnalyze.filter(
+            product => product.imageUrl && product.imageUrl.trim() !== ''
+          );
+          
+          // Process each image one by one with progress updates
+          for (let i = 0; i < productsWithImagesList.length; i++) {
+            const product = productsWithImagesList[i];
+            const currentImageNum = i + 1;
+            
+            // Set current processing URL if defined
+            if (product.imageUrl) {
+              setCurrentProcessingUrl(product.imageUrl);
+            }
+            
+            // Update toast for each processing step
+            toast.loading(`Processing ${currentImageNum}/${productsWithImages} image URLs`, { id: toastId });
+            
+            try {
+              const watermarkIssue = await checkImageForWatermark(product.imageUrl!, product.name, product.id);
+              
+              // Always update the processed count
+              setProcessedImageCount(prev => {
+                const newCount = prev + 1;
+                
+                // Reduce loading skeletons as we process images
+                if (newCount >= totalImageCount - loadingImageCount) {
+                  setLoadingImageCount(count => Math.max(0, count - 1));
+                }
+                
+                return newCount;
+              });
+              
+              // If we found a watermark, add the issue
+              if (watermarkIssue) {
+                // Check if we already have an issue for this product
+                setIssues(prev => {
+                  const existingIssue = prev.find(i => i.id === product.id);
+                  if (existingIssue) {
+                    // Add watermark issue to existing product's issues
+                    return prev.map(i => 
+                      i.id === product.id 
+                        ? { 
+                            ...i, 
+                            issueTypes: [...i.issueTypes, watermarkIssue]
+                          } 
+                        : i
+                    );
+                  } else {
+                    // Create new issue with just this watermark issue type
+                    return [...prev, {
+                      id: product.id,
+                      productId: product.id,
+                      productName: product.name,
+                      issueTypes: [watermarkIssue],
+                      imageUrl: product.imageUrl,
+                      resolved: false
+                    }];
+                  }
+                });
+                
+                toast.warning(`Watermark detected in ${product.name}`, {
+                  duration: 3000,
+                });
+              } else {
+                toast.success(`No watermark in ${product.name}`, { 
+                  duration: 2000
+                });
+              }
+            } catch (error) {
+              console.error(`Error checking image for ${product.name}:`, error);
+              // Still update the processed count even on error
+              setProcessedImageCount(prev => {
+                const newCount = prev + 1;
+                
+                // Reduce loading skeletons as we process images
+                if (newCount >= totalImageCount - loadingImageCount) {
+                  setLoadingImageCount(count => Math.max(0, count - 1));
+                }
+                
+                return newCount;
+              });
+            } finally {
+              // At the end of the function in the finally block:
+              setCurrentProcessingUrl(null);
+            }
+          }
+        }
         
-        if (detectedIssues.length > 0) {
-          toast.warning(`Found ${detectedIssues.length} quality issues`);
+        // Successfully processed all items
+        if (totalIssueCount > 0) {
+          toast.warning(`Found ${totalIssueCount} quality issues`, { id: toastId });
+          
+          // Show detailed toast with the correct counts
+          toast.info(
+            `Issues breakdown: ${watermarkCount} watermarks, ${vendorCount} vendor info, ${phoneCount} phone numbers, ${otherCount} other issues`
+          );
         } else {
-          toast.success("No quality issues found");
+          toast.success("No quality issues found", { id: toastId });
         }
         
         // Switch to the review tab
         setActiveTab("review");
       } catch (error) {
-        toast.error(`Error analyzing data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        toast.error(`Error analyzing data: ${error instanceof Error ? error.message : 'Unknown error'}`, { id: toastId });
       } finally {
         setIsAnalyzing(false);
+        setLoadingImageCount(0);
       }
-    }, 1000);
+    })();
   };
 
   const handleMarkResolved = (id: string) => {
@@ -124,13 +316,22 @@ export default function Home() {
     }
   };
 
+  // Group images by product ID
+  const getProductImages = (productId: string) => {
+    return products
+      .filter(product => product.id === productId && product.imageUrl && product.imageUrl.trim() !== '')
+      .map(product => product.imageUrl as string);
+  };
+
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6">
       {/* Desktop header (hidden on small screens) */}
       <header className="hidden sm:flex sm:items-center sm:justify-between mb-10">
         <div>
           <h1 className="text-3xl font-bold">BidHaus Quality Manager</h1>
-          <p className="text-muted-foreground">Detect and manage product listing quality issues</p>
+          <p className="text-muted-foreground">
+            Detect and manage product listing quality issues
+          </p>
         </div>
       </header>
       
@@ -138,7 +339,9 @@ export default function Home() {
       <header className="flex flex-col items-center sm:hidden gap-4 mb-6">
         <div>
           <h1 className="text-2xl text-center font-bold">BidHaus Quality Manager</h1>
-          <p className="text-muted-foreground">Detect and manage product listing quality issues</p>
+          <p className="text-muted-foreground text-center">
+            Detect and manage product listing quality issues
+          </p>
         </div>
       </header>
       
@@ -151,7 +354,7 @@ export default function Home() {
           </TabsTrigger>
           <TabsTrigger value="review" className="flex items-center gap-2">
             <FileCheck className="h-4 w-4" />
-            Review Issues {issues.length > 0 && `(${issues.length})`}
+            Review Issues {totalIssueCount > 0 && `(${totalIssueCount})`}
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -175,7 +378,7 @@ export default function Home() {
             onClick={() => setActiveTab("review")}
           >
             <FileCheck className="h-4 w-4" />
-            Review Issues {issues.length > 0 && `(${issues.length})`}
+            Review Issues {totalIssueCount > 0 && `(${totalIssueCount})`}
           </Button>
           <Button 
             variant={activeTab === "settings" ? "default" : "outline"} 
@@ -314,7 +517,7 @@ export default function Home() {
                               <h3 className="font-semibold">Vendor Information</h3>
                               <div className="flex items-baseline gap-1">
                                 <span className="text-2xl font-bold">
-                                  {issues.filter(issue => issue.issueType === "vendor_info").length}
+                                  {vendorCount}
                                 </span>
                                 <span className="text-muted-foreground text-sm">issues found</span>
                               </div>
@@ -332,7 +535,7 @@ export default function Home() {
                               <h3 className="font-semibold">Phone Numbers</h3>
                               <div className="flex items-baseline gap-1">
                                 <span className="text-2xl font-bold">
-                                  {issues.filter(issue => issue.issueType === "phone_number").length}
+                                  {phoneCount}
                                 </span>
                                 <span className="text-muted-foreground text-sm">issues found</span>
                               </div>
@@ -350,7 +553,7 @@ export default function Home() {
                               <h3 className="font-semibold">Watermarks</h3>
                               <div className="flex items-baseline gap-1">
                                 <span className="text-2xl font-bold">
-                                  {issues.filter(issue => issue.issueType === "watermark").length}
+                                  {watermarkCount}
                                 </span>
                                 <span className="text-muted-foreground text-sm">issues found</span>
                               </div>
@@ -365,19 +568,19 @@ export default function Home() {
                       <div className="flex gap-3">
                         <div className="flex items-center gap-1">
                           <MessageSquare className="h-4 w-4 text-primary" />
-                          <span className="font-semibold">{issues.filter(issue => issue.issueType === "vendor_info").length}</span>
+                          <span className="font-semibold">{vendorCount}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Phone className="h-4 w-4 text-primary" />
-                          <span className="font-semibold">{issues.filter(issue => issue.issueType === "phone_number").length}</span>
+                          <span className="font-semibold">{phoneCount}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <ImageIcon className="h-4 w-4 text-primary" />
-                          <span className="font-semibold">{issues.filter(issue => issue.issueType === "watermark").length}</span>
+                          <span className="font-semibold">{watermarkCount}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline">{issues.length} Total</Badge>
+                        <Badge variant="outline">{totalIssueCount} Total</Badge>
                         {issues.length > 0 && (
                           <Button 
                             size="icon" 
@@ -419,19 +622,33 @@ export default function Home() {
 
                       {viewMode === "card" ? (
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                          {filteredIssues.length === 0 ? (
+                          {filteredIssues.length === 0 && loadingImageCount === 0 ? (
                             <div className="text-center p-4 text-muted-foreground col-span-full">
                               No issues found with the selected filter.
                             </div>
                           ) : (
-                            filteredIssues.map(issue => (
-                              <QualityIssueCard
-                                key={issue.id}
-                                {...issue}
-                                onMarkResolved={handleMarkResolved}
-                                onIgnore={handleIgnore}
-                              />
-                            ))
+                            <>
+                              {/* Real issues */}
+                              {filteredIssues.map(issue => {
+                                // Get images specific to this product only
+                                const productImages = getProductImages(issue.productId);
+                                
+                                return (
+                                  <QualityIssueCard
+                                    key={issue.id}
+                                    {...issue}
+                                    onMarkResolved={handleMarkResolved}
+                                    onIgnore={handleIgnore}
+                                    productImages={productImages}
+                                  />
+                                );
+                              })}
+                              
+                              {/* Skeleton cards for loading state */}
+                              {Array.from({ length: loadingImageCount }).map((_, index) => (
+                                <SkeletonIssueCard key={`skeleton-${index}`} />
+                              ))}
+                            </>
                           )}
                         </div>
                       ) : (
@@ -477,6 +694,24 @@ export default function Home() {
           </TabsContent>
         </div>
       </Tabs>
+
+      {/* Add progress indicator when analyzing with images */}
+      {isAnalyzing && totalImageCount > 0 && (
+        <div className="mt-4 p-4 border rounded-md">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium">Processing images</span>
+            <span className="text-sm text-muted-foreground">
+              {processedImageCount} of {totalImageCount}
+            </span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2">
+            <div 
+              className="bg-primary h-2 rounded-full transition-all duration-300" 
+              style={{ width: `${(processedImageCount / totalImageCount) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

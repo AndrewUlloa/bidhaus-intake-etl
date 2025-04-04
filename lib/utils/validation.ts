@@ -9,13 +9,17 @@ export interface ProductData {
   [key: string]: string | undefined;
 }
 
+export interface IssueType {
+  type: "vendor_info" | "phone_number" | "watermark" | "other";
+  description: string;
+  details?: string;
+}
+
 export interface QualityIssue {
   id: string;
   productId: string;
   productName: string;
-  issueType: "vendor_info" | "phone_number" | "watermark" | "other";
-  description: string;
-  details?: string;
+  issueTypes: IssueType[];  // Changed to array of issue types
   imageUrl?: string;
   resolved: boolean;
 }
@@ -24,6 +28,7 @@ interface ValidationOptions {
   vendorRegex: string;
   phoneRegex: string;
   customRegexPatterns?: string;
+  enableImageScanning?: boolean;
 }
 
 // Parse CSV string into array of objects
@@ -81,12 +86,55 @@ export function parseCSV(csvString: string): ProductData[] {
     });
 }
 
+// Check if an image has a watermark
+export async function checkImageForWatermark(
+  imageUrl: string, 
+  productName: string, 
+  productId: string
+): Promise<IssueType | null> {
+  try {
+    const response = await fetch('/api/check-watermark', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        imageUrl,
+        productId,
+        productName
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Watermark check failed:', errorData.error || 'Unknown error');
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (data.hasWatermark) {
+      return {
+        type: "watermark",
+        description: "Potential watermark detected in product image"
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error checking image for watermark:', error);
+    return null;
+  }
+}
+
 // Validate products for quality issues
-export function validateProducts(
+export async function validateProducts(
   products: ProductData[],
-  options: ValidationOptions
-): QualityIssue[] {
-  const issues: QualityIssue[] = [];
+  options: ValidationOptions,
+  onIssueFound?: (issue: QualityIssue) => void // Callback for streaming updates
+): Promise<QualityIssue[]> {
+  // Use a Map to store issues by product ID
+  const issueMap = new Map<string, QualityIssue>();
   
   // Create RegExp objects for regex-based validations
   const phoneRegex = new RegExp(options.phoneRegex, 'i');
@@ -105,24 +153,22 @@ export function validateProducts(
       });
   }
 
-  // Check each product for issues
+  // Process each product for text-based issues FIRST
   products.forEach(product => {
     // Skip products without descriptions
     if (!product.description) return;
+    
+    // Store issues for this product
+    const productIssues: IssueType[] = [];
     
     // Check for vendor information in description using the vendor property
     if (product.vendor && product.vendor.trim() !== '') {
       // If the product has a vendor name, check if it appears in the description
       if (product.description.toLowerCase().includes(product.vendor.toLowerCase())) {
-        issues.push({
-          id: uuidv4(),
-          productId: product.id,
-          productName: product.name,
-          issueType: "vendor_info",
+        productIssues.push({
+          type: "vendor_info",
           description: `Description contains vendor name "${product.vendor}"`,
-          details: product.vendor,
-          imageUrl: product.imageUrl,
-          resolved: false
+          details: product.vendor
         });
       }
     }
@@ -130,15 +176,10 @@ export function validateProducts(
     // Check for phone numbers
     if (phoneRegex.test(product.description)) {
       const matches = product.description.match(phoneRegex);
-      issues.push({
-        id: uuidv4(),
-        productId: product.id,
-        productName: product.name,
-        issueType: "phone_number",
+      productIssues.push({
+        type: "phone_number",
         description: `Description contains phone number: ${matches ? matches[0] : 'Unknown format'}`,
-        details: matches ? matches[0] : undefined,
-        imageUrl: product.imageUrl,
-        resolved: false
+        details: matches ? matches[0] : undefined
       });
     }
     
@@ -146,19 +187,73 @@ export function validateProducts(
     customPatterns.forEach((pattern, index) => {
       if (pattern.test(product.description)) {
         const matches = product.description.match(pattern);
-        issues.push({
-          id: uuidv4(),
-          productId: product.id,
-          productName: product.name,
-          issueType: "other",
+        productIssues.push({
+          type: "other",
           description: `Description matches custom pattern #${index + 1}`,
-          details: matches ? matches[0] : undefined,
-          imageUrl: product.imageUrl,
-          resolved: false
+          details: matches ? matches[0] : undefined
         });
       }
     });
+    
+    // If we found any issues, create a quality issue for this product
+    if (productIssues.length > 0) {
+      const newIssue: QualityIssue = {
+        id: product.id,  // Use product ID as the issue ID
+        productId: product.id,
+        productName: product.name,
+        issueTypes: productIssues,
+        imageUrl: product.imageUrl,
+        resolved: false
+      };
+      
+      issueMap.set(product.id, newIssue);
+      
+      // Notify immediately if callback provided
+      if (onIssueFound) onIssueFound(newIssue);
+    }
   });
   
-  return issues;
+  // AFTER processing text-based issues, check for watermarks in images
+  if (options.enableImageScanning) {
+    const productsWithImages = products.filter(product => product.imageUrl && product.imageUrl.trim() !== '');
+    
+    // Process images one by one instead of all at once
+    for (const product of productsWithImages) {
+      try {
+        const watermarkIssue = await checkImageForWatermark(product.imageUrl!, product.name, product.id);
+        
+        if (watermarkIssue) {
+          // Check if we already have an issue for this product
+          if (issueMap.has(product.id)) {
+            // Add watermark issue type to existing product issue
+            const existingIssue = issueMap.get(product.id)!;
+            existingIssue.issueTypes.push(watermarkIssue);
+            
+            // If callback provided, notify of update
+            if (onIssueFound) onIssueFound(existingIssue);
+          } else {
+            // Create new issue with just the watermark issue type
+            const newIssue: QualityIssue = {
+              id: product.id,
+              productId: product.id,
+              productName: product.name,
+              issueTypes: [watermarkIssue],
+              imageUrl: product.imageUrl,
+              resolved: false
+            };
+            
+            issueMap.set(product.id, newIssue);
+            
+            // Notify if callback provided
+            if (onIssueFound) onIssueFound(newIssue);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking image for watermark:', error);
+      }
+    }
+  }
+  
+  // Convert Map values to array
+  return Array.from(issueMap.values());
 } 

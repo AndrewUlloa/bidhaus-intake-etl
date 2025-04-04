@@ -18,10 +18,21 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### Environment Setup
+
+1. Copy `.env.example` to `.env`
+2. Add your OpenAI API key to the `.env` file:
+   ```
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
 ## Features
 
 - CSV file parsing and validation
-- Product quality issue detection (vendor information, phone numbers)
+- Product quality issue detection:
+  - Vendor information in descriptions
+  - Phone numbers in descriptions
+  - Watermarks in product images (using OpenAI Vision)
 - Image downloading from product URLs in CSV files
 - Manual review interface for flagged issues
 
@@ -32,6 +43,46 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `/lib` - Utility functions and validation logic
 - `/public` - Static assets
 - `/app/api` - Server API routes for processing CSV files and images
+  - `/app/api/upload-csv` - Processes CSV uploads and image downloads
+  - `/app/api/check-watermark` - Checks individual images for watermarks
+
+## Watermark Detection
+
+The application uses OpenAI's vision capabilities to automatically detect watermarks in product images:
+
+1. When a CSV file is uploaded, all image URLs are processed
+2. Each image is sent to the OpenAI API (using GPT-4o-mini)
+3. The API analyzes the image and determines if a watermark is present
+4. Images with detected watermarks are flagged for review
+
+### Testing Watermark Detection
+
+There are several ways to test the watermark detection feature:
+
+#### 1. Using the test page
+
+Visit [http://localhost:3000/test-watermark](http://localhost:3000/test-watermark) to access a dedicated testing interface. Here you can:
+
+- Enter any image URL to check for watermarks
+- See real-time results with toast notifications
+- View sample test images with and without watermarks
+
+#### 2. Using the CSV uploader
+
+1. Prepare a CSV file with image URLs in column L (index 11)
+2. Upload the CSV file using the main interface
+3. Click "Download Images" in the Image Downloader component
+4. The system will process all images and check for watermarks
+5. Any detected watermarks will be added to the quality issues list
+
+#### 3. Using the test script
+
+For testing outside the UI:
+
+```bash
+# Run the test script
+node scripts/test-watermark-detection.js
+```
 
 ## Vercel Deployment
 

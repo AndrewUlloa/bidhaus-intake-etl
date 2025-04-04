@@ -4,6 +4,13 @@ import path from 'path';
 import { parse } from 'csv-parse/sync';
 import https from 'https';
 import http from 'http';
+import { v4 as uuidv4 } from 'uuid';
+import OpenAI from 'openai';
+
+// Initialize OpenAI client with API key from environment variables
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Function to download an image
 async function downloadImage(url: string): Promise<Buffer> {
@@ -28,6 +35,41 @@ async function downloadImage(url: string): Promise<Buffer> {
       
     }).on('error', reject);
   });
+}
+
+// Function to check if an image has watermark
+async function checkForWatermark(imageUrl: string): Promise<boolean> {
+  try {
+    // Call OpenAI API to check for watermark
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{
+        role: "user",
+        content: [
+          { type: "text", text: "Is there a watermark in this image? Please answer with a single word 'yes' or 'no'." },
+          {
+            type: "image_url",
+            image_url: {
+              url: imageUrl,
+            },
+          },
+        ],
+      }],
+    });
+
+    // Extract the response content
+    const aiResponse = response.choices[0].message.content || '';
+    
+    // Check if the response contains "yes"
+    const hasWatermark = aiResponse.toLowerCase().includes('yes');
+    
+    console.log(`Watermark detection for ${imageUrl}: ${hasWatermark ? 'Yes' : 'No'}`);
+    return hasWatermark;
+    
+  } catch (error) {
+    console.error('Error checking for watermark:', error);
+    return false;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -70,6 +112,7 @@ export async function POST(request: NextRequest) {
     await mkdir(outputDir, { recursive: true });
     
     const downloadedImages = [];
+    const watermarkIssues = [];
     let idCounter = 1;
     
     // Process each row (similar to Python script logic)
@@ -123,6 +166,23 @@ export async function POST(request: NextRequest) {
         
         downloadedImages.push(imageData);
         console.log(`Downloaded: ${outputPath}`);
+
+        // Check for watermark
+        const hasWatermark = await checkForWatermark(url);
+        if (hasWatermark) {
+          const productName = row[1] || `Product ${sku}`; // Assuming name is in column 2
+          
+          watermarkIssues.push({
+            id: uuidv4(),
+            productId: String(idCounter),
+            productName,
+            issueType: "watermark",
+            description: "Potential watermark detected in product image",
+            imageUrl: url,
+            resolved: false
+          });
+        }
+        
         idCounter++;
         
       } catch (error) {
@@ -133,7 +193,8 @@ export async function POST(request: NextRequest) {
     // Write summary JSON
     const summary = {
       total_images: downloadedImages.length,
-      images: downloadedImages
+      images: downloadedImages,
+      watermarkIssues
     };
     
     const summaryPath = path.join(outputDir, "download_summary.json");
@@ -145,7 +206,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Images downloaded successfully',
       imageDirectory: '/downloaded_images',
-      summary: summary
+      summary: summary,
+      watermarkIssues
     });
     
   } catch (error: unknown) {
