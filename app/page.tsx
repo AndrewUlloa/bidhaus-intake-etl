@@ -7,12 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Info, Upload, FileCheck, Settings, AlertCircle, MessageSquare, Phone, Image as ImageIcon, RefreshCw } from "lucide-react";
+import { Info, Upload, FileCheck, AlertCircle, MessageSquare, Phone, Image as ImageIcon, RefreshCw } from "lucide-react";
 import { CsvUploader } from "@/components/CsvUploader";
 import { QualityIssueCard } from "@/components/QualityIssueCard";
 import { QualityIssueList } from "@/components/QualityIssueList";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
-import { DetectionSettingsForm } from "@/components/DetectionSettingsForm";
 import { toast } from "sonner";
 import { ProductData, QualityIssue, validateProducts, checkImageForWatermark } from "@/lib/utils/validation";
 import { motion } from "framer-motion";
@@ -70,7 +69,7 @@ export default function Home() {
   const [issues, setIssues] = useState<QualityIssue[]>([]);
   const [fileUploaded, setFileUploaded] = useState(false);
   const [products, setProducts] = useState<ProductData[]>([]);
-  const [settings, setSettings] = useState<DetectionSettings>(defaultSettings);
+  const settings = defaultSettings; // Use constant settings instead of state since we no longer need to update it
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("card");
   const [issueTypeFilter, setIssueTypeFilter] = useState<string>("all");
@@ -322,16 +321,6 @@ export default function Home() {
     toast.success("Issue ignored");
   };
 
-  const handleSaveSettings = (newSettings: DetectionSettings) => {
-    setSettings(newSettings);
-    toast.success("Settings saved");
-    
-    // Re-analyze data with new settings if we have products loaded
-    if (products.length > 0) {
-      handleAnalyzeData(products);
-    }
-  };
-
   // Group images by product ID
   const getProductImages = (productId: string) => {
     return products
@@ -372,9 +361,9 @@ export default function Home() {
             <FileCheck className="h-4 w-4" />
             Review Issues {totalIssueCount > 0 && `(${totalIssueCount})`}
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Detection Settings
+          <TabsTrigger value="summary" className="flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            Summary
           </TabsTrigger>
         </TabsList>
         
@@ -397,12 +386,12 @@ export default function Home() {
             Review Issues {totalIssueCount > 0 && `(${totalIssueCount})`}
           </Button>
           <Button 
-            variant={activeTab === "settings" ? "default" : "outline"} 
+            variant={activeTab === "summary" ? "default" : "outline"} 
             className="flex items-center gap-1 flex-1"
-            onClick={() => setActiveTab("settings")}
+            onClick={() => setActiveTab("summary")}
           >
-            <Settings className="h-4 w-4" />
-            Settings
+            <Info className="h-4 w-4" />
+            Summary
           </Button>
         </div>
         
@@ -683,28 +672,151 @@ export default function Home() {
             </Card>
           </TabsContent>
           
-          <TabsContent value="settings" className="h-full">
+          <TabsContent value="summary" className="h-full">
             <Card className="h-full">
               <CardHeader>
-                <CardTitle>Detection Settings</CardTitle>
+                <CardTitle>Quality Summary</CardTitle>
                 <CardDescription>
-                  Configure rules for detecting quality issues in product listings
+                  Overview of quality issues found in your product listings
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[500px]">
+              <CardContent>
                 <ScrollArea className="h-full">
-                  <div className="pr-4">
-                    <DetectionSettingsForm 
-                      onSaveSettings={handleSaveSettings} 
-                      initialSettings={settings}
-                    />
+                  <div className="space-y-8 pr-4">
+                    {/* Summary Stats Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Total Products */}
+                      <Card className="bg-muted/30">
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className="bg-background p-3 rounded-full">
+                            <FileCheck className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">Total Products</h3>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-bold">
+                                {products.length}
+                              </span>
+                              <span className="text-muted-foreground text-sm">products scanned</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Products with Issues */}
+                      <Card className="bg-muted/30">
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className="bg-background p-3 rounded-full">
+                            <AlertCircle className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">Products with Issues</h3>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-bold">
+                                {issues.length}
+                              </span>
+                              <span className="text-muted-foreground text-sm">products affected</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Resolved Issues */}
+                      <Card className="bg-muted/30">
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className="bg-background p-3 rounded-full">
+                            <RefreshCw className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">Resolved Issues</h3>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-bold">
+                                {issues.filter(issue => issue.resolved).reduce((count, issue) => count + issue.issueTypes.length, 0)}
+                              </span>
+                              <span className="text-muted-foreground text-sm">of {totalIssueCount}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    {/* Issue Type Breakdown */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Issue Type Breakdown</h3>
+                      <div className="grid grid-cols-1 gap-4">
+                        {/* Vendor Information */}
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <MessageSquare className="h-5 w-5 text-primary" />
+                            <span className="font-medium">Vendor Information</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl font-bold">{vendorCount}</span>
+                            <div className="w-32 bg-muted rounded-full h-2">
+                              <div 
+                                className="bg-primary h-2 rounded-full" 
+                                style={{ width: `${totalIssueCount > 0 ? (vendorCount / totalIssueCount) * 100 : 0}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Phone Numbers */}
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Phone className="h-5 w-5 text-primary" />
+                            <span className="font-medium">Phone Numbers</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl font-bold">{phoneCount}</span>
+                            <div className="w-32 bg-muted rounded-full h-2">
+                              <div 
+                                className="bg-primary h-2 rounded-full" 
+                                style={{ width: `${totalIssueCount > 0 ? (phoneCount / totalIssueCount) * 100 : 0}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Watermarks */}
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <ImageIcon className="h-5 w-5 text-primary" />
+                            <span className="font-medium">Watermarks</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl font-bold">{watermarkCount}</span>
+                            <div className="w-32 bg-muted rounded-full h-2">
+                              <div 
+                                className="bg-primary h-2 rounded-full" 
+                                style={{ width: `${totalIssueCount > 0 ? (watermarkCount / totalIssueCount) * 100 : 0}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </ScrollArea>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <p className="text-sm text-muted-foreground mr-auto">
-                  Settings are automatically saved
-                </p>
+                <Button 
+                  onClick={() => handleAnalyzeData()}
+                  disabled={isAnalyzing || products.length === 0}
+                >
+                  {isAnalyzing ? (
+                    <span className="flex items-center gap-1.5">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="inline-block"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </motion.div>
+                      Re-analyzing...
+                    </span>
+                  ) : "Re-analyze Data"}
+                </Button>
               </CardFooter>
             </Card>
           </TabsContent>
