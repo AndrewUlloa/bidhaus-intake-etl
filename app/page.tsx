@@ -17,6 +17,7 @@ import { ProductData, QualityIssue, validateProducts, checkImageForWatermark } f
 import { motion } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Skeleton card component for loading state
 function SkeletonIssueCard() {
@@ -338,7 +339,13 @@ export default function Home() {
             Detect and manage product listing quality issues
           </p>
         </div>
+        <ThemeToggle />
       </header>
+      
+      {/* Mobile theme toggle (absolute positioned) */}
+      <div className="sm:hidden absolute top-4 left-4 z-10">
+        <ThemeToggle />
+      </div>
       
       {/* Mobile header (visible only on small screens) */}
       <header className="flex flex-col items-center sm:hidden gap-4 mb-6">
