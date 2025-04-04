@@ -334,7 +334,7 @@ export default function Home() {
       {/* Desktop header (hidden on small screens) */}
       <header className="hidden sm:flex sm:items-center mb-10 relative">
         <div className="w-full text-center">
-          <h1 className="text-3xl font-bold">BidHaus Quality Manager</h1>
+          <h1 className="text-3xl font-bold">Bidhaus Quality Manager</h1>
           <p className="text-muted-foreground">
             Detect and manage product listing quality issues
           </p>
@@ -352,7 +352,7 @@ export default function Home() {
       {/* Mobile header (visible only on small screens) */}
       <header className="flex flex-col items-center sm:hidden gap-4 mb-6">
         <div>
-          <h1 className="text-2xl text-center font-bold">BidHaus Quality Manager</h1>
+          <h1 className="text-2xl text-center font-bold">Bidhaus Quality Manager</h1>
           <p className="text-muted-foreground text-center">
             Detect and manage product listing quality issues
           </p>
