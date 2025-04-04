@@ -8,7 +8,6 @@ type IssueType = "vendor_info" | "phone_number" | "watermark" | "other";
 
 interface QualityIssueCardProps {
   id: string;
-  productId: string;
   productName: string;
   issueType: IssueType;
   description: string;
@@ -21,7 +20,6 @@ interface QualityIssueCardProps {
 
 export function QualityIssueCard({
   id,
-  productId,
   productName,
   issueType,
   description,
@@ -87,13 +85,9 @@ export function QualityIssueCard({
   return (
     <>
       {/* Desktop version */}
-      <Card className={`${resolved ? "opacity-60" : ""} hidden sm:block`}>
+      <Card className={`${resolved ? "opacity-60" : ""} hidden sm:block h-full`}>
         <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-base">{productName}</CardTitle>
-              <p className="text-xs text-muted-foreground">ID: {productId}</p>
-            </div>
+          <div className="space-y-2">
             <Badge variant={resolved ? "outline" : "destructive"} className="flex items-center gap-1">
               {resolved ? (
                 <>
@@ -107,16 +101,17 @@ export function QualityIssueCard({
                 </>
               )}
             </Badge>
+            <CardTitle className="text-base line-clamp-2">{productName}</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
             <div>
               <h4 className="text-sm font-semibold mb-1">Issue Description</h4>
-              <p className="text-sm">{description}</p>
+              <p className="text-sm line-clamp-3">{description}</p>
               {details && (
                 <div className="mt-2 bg-muted p-2 rounded text-sm">
-                  <span className="font-medium">Matched text:</span> &ldquo;{details}&rdquo;
+                  <span className="font-medium">Matched text:</span> <span className="line-clamp-1">&ldquo;{details}&rdquo;</span>
                 </div>
               )}
             </div>
@@ -139,32 +134,28 @@ export function QualityIssueCard({
             )}
           </div>
         </CardContent>
-        <CardFooter className="flex justify-end gap-2">
+        <CardFooter className="flex flex-col gap-2 px-3 py-3 mt-auto">
           {!resolved ? (
             <>
-              <Button variant="outline" size="sm" onClick={() => onIgnore(id)}>
+              <Button variant="outline" size="sm" onClick={() => onIgnore(id)} className="w-full">
                 Ignore
               </Button>
-              <Button size="sm" onClick={() => onMarkResolved(id)}>
+              <Button size="sm" onClick={() => onMarkResolved(id)} className="w-full">
                 Mark as Reviewed
               </Button>
             </>
           ) : (
-            <Button variant="outline" size="sm" onClick={() => onMarkResolved(id)}>
+            <Button variant="outline" size="sm" onClick={() => onMarkResolved(id)} className="w-full">
               Undo
             </Button>
           )}
         </CardFooter>
       </Card>
 
-      {/* Mobile version */}
-      <Card className={`${resolved ? "opacity-60" : ""} sm:hidden`}>
+      {/* Mobile version - updated to match desktop */}
+      <Card className={`${resolved ? "opacity-60" : ""} sm:hidden h-full`}>
         <CardHeader className="pb-2 px-3">
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-sm">{productName}</CardTitle>
-              <p className="text-xs text-muted-foreground">ID: {productId}</p>
-            </div>
+          <div className="space-y-2">
             <Badge variant={resolved ? "outline" : "destructive"} className="flex items-center gap-1 text-xs">
               {resolved ? (
                 <>
@@ -178,16 +169,17 @@ export function QualityIssueCard({
                 </>
               )}
             </Badge>
+            <CardTitle className="text-sm line-clamp-2">{productName}</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="px-3">
           <div className="grid gap-3">
             <div>
               <h4 className="text-xs font-semibold mb-1">Issue Description</h4>
-              <p className="text-xs">{description}</p>
+              <p className="text-xs line-clamp-3">{description}</p>
               {details && (
                 <div className="mt-2 bg-muted p-2 rounded text-xs">
-                  <span className="font-medium">Matched text:</span> &ldquo;{details}&rdquo;
+                  <span className="font-medium">Matched text:</span> <span className="line-clamp-1">&ldquo;{details}&rdquo;</span>
                 </div>
               )}
             </div>
@@ -210,7 +202,7 @@ export function QualityIssueCard({
             )}
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2 px-3 py-3">
+        <CardFooter className="flex flex-col gap-2 px-3 py-3 mt-auto">
           {!resolved ? (
             <>
               <Button variant="outline" size="sm" onClick={() => onIgnore(id)} className="w-full">

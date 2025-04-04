@@ -2,20 +2,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, Check, Image as ImageIcon, MessageSquare, ChevronDown, Trash, Filter } from "lucide-react";
-import { useState, useEffect } from "react";
+import { AlertTriangle, Check, Image as ImageIcon, MessageSquare, ChevronDown, Trash } from "lucide-react";
+import { useState } from "react";
 import { 
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 type IssueType = "vendor_info" | "phone_number" | "watermark" | "other";
 
@@ -44,24 +37,11 @@ export function QualityIssueList({
 }: QualityIssueListProps) {
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [selectPopoverOpen, setSelectPopoverOpen] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
-  
-  // Reset selection when filter changes
-  useEffect(() => {
-    setSelectedIssues([]);
-  }, [typeFilter]);
-  
-  // Filter issues based on selected type
-  const filteredIssues = issues.filter(issue => {
-    if (typeFilter === "all") return true;
-    return issue.issueType === typeFilter;
-  });
   
   // Calculate checkbox state based on selection
   const getSelectAllState = () => {
     if (selectedIssues.length === 0) return false;
-    if (filteredIssues.length > 0 && selectedIssues.length === filteredIssues.length) return true;
+    if (issues.length > 0 && selectedIssues.length === issues.length) return true;
     return "indeterminate" as const;
   };
   
@@ -74,7 +54,7 @@ export function QualityIssueList({
   };
   
   const selectAll = () => {
-    setSelectedIssues(filteredIssues.map(issue => issue.id));
+    setSelectedIssues(issues.map(issue => issue.id));
     setSelectPopoverOpen(false);
   };
   
@@ -84,12 +64,12 @@ export function QualityIssueList({
   };
   
   const selectReviewed = () => {
-    setSelectedIssues(filteredIssues.filter(issue => issue.resolved).map(issue => issue.id));
+    setSelectedIssues(issues.filter(issue => issue.resolved).map(issue => issue.id));
     setSelectPopoverOpen(false);
   };
   
   const selectUnreviewed = () => {
-    setSelectedIssues(filteredIssues.filter(issue => !issue.resolved).map(issue => issue.id));
+    setSelectedIssues(issues.filter(issue => !issue.resolved).map(issue => issue.id));
     setSelectPopoverOpen(false);
   };
   
@@ -144,10 +124,10 @@ export function QualityIssueList({
 
   return (
     <div className="relative">
-      {/* Filter controls - visible on all viewports */}
+      {/* Select all controls */}
       <div className="sticky top-0 z-10 bg-background border-b mb-2">
         <div className="flex items-center justify-between p-2">
-          {/* Select all/none controls - Now on the left */}
+          {/* Select all/none controls */}
           <div className="flex items-center gap-2">
             <div className="flex items-center">
               <Popover open={selectPopoverOpen} onOpenChange={setSelectPopoverOpen}>
@@ -156,7 +136,7 @@ export function QualityIssueList({
                     <Checkbox 
                       checked={getSelectAllState()} 
                       onCheckedChange={() => {
-                        if (filteredIssues.length > 0 && selectedIssues.length === filteredIssues.length) {
+                        if (issues.length > 0 && selectedIssues.length === issues.length) {
                           deselectAll();
                         } else {
                           selectAll();
@@ -199,81 +179,13 @@ export function QualityIssueList({
             </div>
             
             <span className="text-xs text-muted-foreground ml-2">
-              {filteredIssues.length} {filteredIssues.length === 1 ? 'issue' : 'issues'}
+              {issues.length} {issues.length === 1 ? 'issue' : 'issues'}
             </span>
-          </div>
-
-          {/* Desktop filters - Now on the right */}
-          <div className="hidden md:flex items-center gap-2">
-            <span className="text-sm font-medium">Filter by:</span>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px] h-8">
-                <SelectValue placeholder="All Issues" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Issues</SelectItem>
-                <SelectItem value="vendor_info">Vendor Information</SelectItem>
-                <SelectItem value="phone_number">Phone Number</SelectItem>
-                <SelectItem value="watermark">Watermark</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Mobile filters - Now on the right */}
-          <div className="md:hidden flex items-center">
-            <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Filter className="h-4 w-4" />
-                  {typeFilter !== "all" ? getShortIssueLabel(typeFilter as IssueType) : "All Issues"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-[180px] p-0">
-                <div className="py-1">
-                  <div 
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "all" ? "bg-muted" : ""}`}
-                    onClick={() => {
-                      setTypeFilter("all");
-                      setFilterPopoverOpen(false);
-                    }}
-                  >
-                    All Issues
-                  </div>
-                  <div 
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "vendor_info" ? "bg-muted" : ""}`}
-                    onClick={() => {
-                      setTypeFilter("vendor_info");
-                      setFilterPopoverOpen(false);
-                    }}
-                  >
-                    Vendor Information
-                  </div>
-                  <div 
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "phone_number" ? "bg-muted" : ""}`}
-                    onClick={() => {
-                      setTypeFilter("phone_number");
-                      setFilterPopoverOpen(false);
-                    }}
-                  >
-                    Phone Number
-                  </div>
-                  <div 
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${typeFilter === "watermark" ? "bg-muted" : ""}`}
-                    onClick={() => {
-                      setTypeFilter("watermark");
-                      setFilterPopoverOpen(false);
-                    }}
-                  >
-                    Watermark
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
           </div>
         </div>
       </div>
 
-      {/* Selection banner - moved between filters and table */}
+      {/* Selection banner */}
       {selectedIssues.length > 0 && (
         <div className="bg-blue-50 dark:bg-blue-950/20 border rounded-md mb-4 p-2 flex items-center justify-between">
           <span className="text-sm font-medium ml-2">
@@ -302,7 +214,7 @@ export function QualityIssueList({
         </div>
       )}
 
-      {/* Table View - for all viewports with responsive design */}
+      {/* Table View */}
       <div className="border rounded-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
@@ -321,14 +233,14 @@ export function QualityIssueList({
               </tr>
             </thead>
             <tbody>
-              {filteredIssues.length === 0 ? (
+              {issues.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-8 text-muted-foreground">
                     No issues found with the selected filter.
                   </td>
                 </tr>
               ) : (
-                filteredIssues.map((issue) => (
+                issues.map((issue) => (
                   <tr 
                     key={issue.id} 
                     className={`border-b hover:bg-gray-50 dark:hover:bg-gray-900/10 

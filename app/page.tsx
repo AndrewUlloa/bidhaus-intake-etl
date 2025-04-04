@@ -16,6 +16,7 @@ import { DetectionSettingsForm } from "@/components/DetectionSettingsForm";
 import { toast } from "sonner";
 import { ProductData, QualityIssue, validateProducts } from "@/lib/utils/validation";
 import { motion } from "framer-motion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Import the DetectionSettings type
 interface DetectionSettings {
@@ -43,6 +44,13 @@ export default function Home() {
   const [settings, setSettings] = useState<DetectionSettings>(defaultSettings);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("card");
+  const [issueTypeFilter, setIssueTypeFilter] = useState<string>("all");
+
+  // Filter issues based on selected type
+  const filteredIssues = issues.filter(issue => {
+    if (issueTypeFilter === "all") return true;
+    return issue.issueType === issueTypeFilter;
+  });
 
   const handleFileUploaded = (file: File, data: ProductData[]) => {
     // Store the parsed products
@@ -270,7 +278,7 @@ export default function Home() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col h-[500px] pb-0">
+              <CardContent className="flex-1 overflow-auto">
                 {!fileUploaded ? (
                   <div className="h-full flex items-center justify-center">
                     <Alert className="max-w-md">
@@ -292,7 +300,7 @@ export default function Home() {
                     </Alert>
                   </div>
                 ) : (
-                  <div className="flex flex-col h-full">
+                  <div className="w-full min-h-[500px]">
                     {/* Desktop Stats Cards - Only visible on desktop */}
                     <div className="hidden md:block sticky top-0 bg-background z-10 pb-4">
                       <div className="grid grid-cols-3 gap-4 mb-2">
@@ -390,22 +398,46 @@ export default function Home() {
                     </div>
                     
                     {/* Scrollable Issues Area */}
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden w-full">
+                      {/* Issue Type Filter - applied to both views */}
+                      <div className="sticky top-0 z-10 bg-background border-b mb-4 p-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Filter by issue type:</span>
+                          <Select value={issueTypeFilter} onValueChange={setIssueTypeFilter}>
+                            <SelectTrigger className="w-[180px] h-8">
+                              <SelectValue placeholder="All Issues" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Issues</SelectItem>
+                              <SelectItem value="vendor_info">Vendor Information</SelectItem>
+                              <SelectItem value="phone_number">Phone Number</SelectItem>
+                              <SelectItem value="watermark">Watermark</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
                       {viewMode === "card" ? (
-                        <div className="space-y-4 pr-4">
-                          {issues.map(issue => (
-                            <QualityIssueCard
-                              key={issue.id}
-                              {...issue}
-                              onMarkResolved={handleMarkResolved}
-                              onIgnore={handleIgnore}
-                            />
-                          ))}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                          {filteredIssues.length === 0 ? (
+                            <div className="text-center p-4 text-muted-foreground col-span-full">
+                              No issues found with the selected filter.
+                            </div>
+                          ) : (
+                            filteredIssues.map(issue => (
+                              <QualityIssueCard
+                                key={issue.id}
+                                {...issue}
+                                onMarkResolved={handleMarkResolved}
+                                onIgnore={handleIgnore}
+                              />
+                            ))
+                          )}
                         </div>
                       ) : (
                         <div className="h-full max-h-[calc(100vh-240px)]">
                           <QualityIssueList 
-                            issues={issues}
+                            issues={filteredIssues}
                             onMarkResolved={handleMarkResolved}
                             onIgnore={handleIgnore}
                           />
