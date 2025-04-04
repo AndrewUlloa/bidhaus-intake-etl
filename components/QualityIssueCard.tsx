@@ -180,7 +180,7 @@ export function QualityIssueCard({
       
       {/* Desktop version */}
       <motion.div
-        className="hidden sm:block h-full"
+        className="hidden sm:block h-full rounded-xl overflow-hidden" 
         variants={cardVariants}
         initial="initial"
         animate="animate"
@@ -339,7 +339,7 @@ export function QualityIssueCard({
 
       {/* Mobile version - updated to match desktop */}
       <motion.div
-        className="sm:hidden h-full"
+        className="sm:hidden h-full rounded-xl overflow-hidden"
         variants={cardVariants}
         initial="initial"
         animate="animate"

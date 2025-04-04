@@ -460,39 +460,41 @@ export default function Home() {
           
           <TabsContent value="review" className="h-full">
             <Card className="h-full flex flex-col">
-              <CardHeader className="flex flex-row justify-between items-start">
-                <div>
-                  <CardTitle>Review Flagged Issues</CardTitle>
-                  <CardDescription>
-                    Review and address quality issues detected in your product listings
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-4">
-                  {issues.length > 0 && (
-                    <>
-                      <ViewToggle value={viewMode} onChange={setViewMode} />
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleAnalyzeData()}
-                        disabled={isAnalyzing}
-                        className="hidden md:inline-flex"
-                      >
-                        {isAnalyzing ? (
-                          <span className="flex items-center gap-1.5">
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                              className="inline-block"
-                            >
-                              <RefreshCw className="h-4 w-4" />
-                            </motion.div>
-                            Re-analyzing...
-                          </span>
-                        ) : "Re-analyze Data"}
-                      </Button>
-                    </>
-                  )}
+              <CardHeader>
+                <div className="flex flex-row justify-between items-start w-full">
+                  <div>
+                    <CardTitle>Review Flagged Issues</CardTitle>
+                    <CardDescription>
+                      Review and address quality issues detected in your product listings
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {issues.length > 0 && (
+                      <>
+                        <ViewToggle value={viewMode} onChange={setViewMode} />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleAnalyzeData()}
+                          disabled={isAnalyzing}
+                          className="hidden md:inline-flex"
+                        >
+                          {isAnalyzing ? (
+                            <span className="flex items-center gap-1.5">
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                className="inline-block"
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </motion.div>
+                              Re-analyzing...
+                            </span>
+                          ) : "Re-analyze Data"}
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="flex-1 overflow-auto">
