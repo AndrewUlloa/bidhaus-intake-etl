@@ -1,5 +1,6 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LayoutGrid, List } from "lucide-react";
+import { motion } from "framer-motion";
 
 export type ViewMode = "card" | "list";
 
@@ -9,6 +10,17 @@ interface ViewToggleProps {
 }
 
 export function ViewToggle({ value, onChange }: ViewToggleProps) {
+  // Framer Motion variants
+  const iconVariants = {
+    initial: { scale: 1 },
+    active: { 
+      scale: 1.1,
+      transition: { type: "spring", stiffness: 500, damping: 15 }
+    },
+    hover: { scale: 1.05 },
+    tap: { scale: 0.95 }
+  };
+
   return (
     <>
       {/* Desktop version */}
@@ -21,8 +33,24 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
             className="flex items-center gap-1 px-3 bg-transparent hover:bg-muted transition-colors"
             data-state={value === "card" ? "on" : "off"}
           >
-            <LayoutGrid className="h-4 w-4" />
-            <span className="text-xs">Grid</span>
+            <motion.div
+              variants={iconVariants}
+              initial="initial"
+              animate={value === "card" ? "active" : "initial"}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </motion.div>
+            <motion.span 
+              className="text-xs"
+              animate={{ 
+                fontWeight: value === "card" ? 600 : 400,
+                transition: { duration: 0.2 }
+              }}
+            >
+              Grid
+            </motion.span>
           </ToggleGroupItem>
           <ToggleGroupItem 
             value="list" 
@@ -30,8 +58,24 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
             className="flex items-center gap-1 px-3 bg-transparent hover:bg-muted transition-colors"
             data-state={value === "list" ? "on" : "off"}
           >
-            <List className="h-4 w-4" />
-            <span className="text-xs">List</span>
+            <motion.div
+              variants={iconVariants}
+              initial="initial"
+              animate={value === "list" ? "active" : "initial"}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <List className="h-4 w-4" />
+            </motion.div>
+            <motion.span 
+              className="text-xs"
+              animate={{ 
+                fontWeight: value === "list" ? 600 : 400,
+                transition: { duration: 0.2 }
+              }}
+            >
+              List
+            </motion.span>
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
@@ -45,7 +89,15 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
             className="flex items-center gap-1 px-2 py-1 bg-transparent hover:bg-muted transition-colors"
             data-state={value === "card" ? "on" : "off"}
           >
-            <LayoutGrid className="h-3 w-3" />
+            <motion.div
+              variants={iconVariants}
+              initial="initial"
+              animate={value === "card" ? "active" : "initial"}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <LayoutGrid className="h-3 w-3" />
+            </motion.div>
           </ToggleGroupItem>
           <ToggleGroupItem 
             value="list" 
@@ -53,7 +105,15 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
             className="flex items-center gap-1 px-2 py-1 bg-transparent hover:bg-muted transition-colors"
             data-state={value === "list" ? "on" : "off"}
           >
-            <List className="h-3 w-3" />
+            <motion.div
+              variants={iconVariants}
+              initial="initial"
+              animate={value === "list" ? "active" : "initial"}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <List className="h-3 w-3" />
+            </motion.div>
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
